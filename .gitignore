@@ -6,6 +6,8 @@
 /ref/
 # Personal save data and console logs
 /save-backup/
+# Per-console dumps written by the module (items.txt, inventory.txt)
+/data/
 /logs/
 # Build outputs (rebuild with mod/build.sh)
 /mod/exl/build/

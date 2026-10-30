@@ -3,6 +3,8 @@
 #include "config.hpp"
 #include "crash.hpp"
 #include "game.hpp"
+#include "gear.hpp"
+#include "item_dump.hpp"
 #include "krypt_store.hpp"
 #include "log.hpp"
 #include "mk11_offsets.hpp"
@@ -154,6 +156,10 @@ HOOK_DEFINE_TRAMPOLINE(KryptInitialize) {
     static void Callback(void* krypt) {
         Orig(krypt);
         s_Krypt = krypt;
+        items::DumpIfMissing();
+        void* user = game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1);
+        gear::ApplyGiveList(user);
+        items::DumpInventory(user);
         if (int topUp = config::KryptCurrencyTopUp(); topUp > 0) {
             Log("Krypt start: topping currencies up to %d (config.ini)", topUp);
             for (const char* slug : { "Exp_Koins", "Exp_SoulFragments", "Exp_BrutalityHearts" })

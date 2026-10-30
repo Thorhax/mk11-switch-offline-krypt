@@ -47,15 +47,31 @@ GetActiveModeUser = GetActiveModeUser(int, unsigned int)
 GMK11Unlockables = GMK11Unlockables
 MK11Unlockables_UnlockPageBit = MK11Unlockables::Unlock(FGUserEntity*, unsigned int, unsigned int)
 MK11Krypt_RefreshWallet = MK11Krypt::RefreshWallet()
-# Gear rewards (add_game_item)
+# Gear rewards (add_game_item) and the give list (gear.cpp), mirroring MK11Unlockables::Unlock(FGUserEntity*, FName, ...)
+InventoryManager_FindItemDefinitionHandleByName = InventoryManager::FindItemDefinitionHandleByName(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&)
+GetCharacterExperienceType = GetCharacterExperienceType(FName const&)
+ExperienceManager_GetExperienceStats = MK11ExperienceManager::GetExperienceStats(EExperienceType, FGUserEntity const*)
+GearItemArray_Dtor = TArray<GearItem, 8u, IsolatedLongTermAllocator>::~TArray()
+AttributeDefinitionInstanceArray_Dtor = TArray<FAttributeDefinitionInstance, 8u, NRS::DefaultContainerAllocator>::~TArray()
+# GOT slot holding the MK11ExperienceManager instance
+Got_ExperienceManager = 0xabb64a0
 InventoryManager_FindItemDefinition = InventoryManager::FindItemDefinition(FItemDefinitionHandle)
 InventoryManager_AddItem = InventoryManager::AddItem(FGUserEntity*, GearItem const&, BILootDropSourceData const&, EquipmentRefType*)
 GearItem_Ctor = GearItem::GearItem(FItemDefinitionHandle, int)
-MKItem_Dtor = 0x2ebf98
-BILootDropSourceData_Ctor = BILootDropSourceData::BILootDropSourceData(char const*)
-ProcSafeStackObject_Dtor = 0x17c0770
 FGUserEntityHandle_Ctor = FGUserEntityHandle::FGUserEntityHandle()
 FGUserEntityHandle_SetPointer = FGUserEntityHandle::SetPointer(FGUserEntity const*)
 # GOT slots holding vtable addresses (see MK11Unlockables::Unlock / BILootDropSourceData ctor)
 Got_EquipmentRefTypeVtable = 0xabb6320
-Got_BILootDropSourceDataVtable = 0xabb62a8
+# Item list dump (item_dump.cpp)
+InventoryManager_GetItemDefinitions = InventoryManager::GetItemDefinitions()
+ItemDefinition_IsAugment = FItemDefinition::IsAugment() const
+ItemDefinition_IsDisabled = FItemDefinition::IsDisabled() const
+ItemDefinition_GetInventoryItemType = FItemDefinition::GetInventoryItemType() const
+ItemDefinition_GetCharacterKey = FItemDefinition::GetCharacterKey() const
+ItemDefinition_GetBaseLocalizedName = FItemDefinition::GetBaseLocalizedName() const
+SlotDefinitionHandle_GetReference = FSlotDefinitionHandle::GetReference() const
+# GOT slot holding the FName name-entry table (see FItemDefinition::GetLocalizationSection)
+Got_FNameEntries = 0xab7c730
+# Inventory dump (item_dump.cpp): InventoryData +0x18 is TMap<HydraID, GearItemSaveData> (0xb8-byte
+# elements, definition GUID at +0x44), see InventoryData::GetRefByItemIndex
+FGUserEntity_GetInventoryData = FGUserEntity::GetInventoryData()

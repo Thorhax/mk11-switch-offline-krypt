@@ -3,7 +3,7 @@
 Goal: play the Krypt on the console with no server. MK11 Ultimate 1.0.26, title 0100F2200C984000,
 main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 
-## Status (2026-10-31)
+## Status (2026-10-31, v0.2)
 
 | Area | State |
 |---|---|
@@ -12,7 +12,8 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Koins / Souls / Hearts balances offline | Works (on-console wallet) |
 | Chest costs deducted | Works |
 | Chest unlockables (concept art etc.) granted | Works (local profile unlock bits) |
-| Gear rewards from chests | **Not yet**: recorded only. Granting them crashes the game (see below) |
+| Gear rewards from chests | Fixed in v0.2 (on via `apply_gear_rewards=1`), not yet seen from a real chest |
+| Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart |
 | Time Krystals | Never touched |
 | Online modes | Unchanged: the patches only affect the Krypt entry path |
 
@@ -24,7 +25,7 @@ atmosphere/contents/0100F2200C984000/exefs/main.npdm  game npdm + svcs 0x40/0x43
 mk11offline/config.ini                                optional settings
 ```
 
-Release copy: `mod/releases/v0.1-offline-krypt/`. To uninstall, delete the `exefs` folder.
+Release copies: `mod/releases/v0.2-give-items/` (current), `mod/releases/v0.1-offline-krypt/`. To uninstall, delete the `exefs` folder.
 
 ## Files the module writes on the SD card (`sdmc:/mk11offline/`)
 
@@ -34,12 +35,18 @@ Release copy: `mod/releases/v0.1-offline-krypt/`. To uninstall, delete the `exef
 - `inventory_batches.jsonl`: every reward batch the Krypt would have sent to the server, one per line.
 - `log.txt`: the module's log for the current run.
 - `replay_batch.json` (if you create it): applied once at the next Krypt save, then deleted.
+- `items.txt`: every item definition the game has loaded (31,106): GUID, internal name, character,
+  slot, type, augment flag, disabled flag, display name. Written on Krypt start when missing.
+- `inventory.txt`: your current inventory, one line per item (Hydra ID, GUID, name, character,
+  display name). Rewritten on every Krypt start.
+- `give.txt` (if you create it): one internal name or GUID per line, `#` comments. Each item is
+  added at the next Krypt start, then the file is deleted. Results are in `log.txt`.
 
 `config.ini`:
 
 ```
 krypt_currency_topup=0   # >0: top Koins/Souls/Hearts up to this amount on each Krypt start
-apply_gear_rewards=0     # 1: grant gear from chests locally (currently crashes)
+apply_gear_rewards=1     # grant gear/augments from Krypt chests locally
 ```
 
 ## How it works
@@ -68,19 +75,28 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
    - `game_unlockables` → `MK11Unlockables::Unlock(GMK11Unlockables, user, bit, page)`
    - `add_game_item` → gear (gated)
 
-## Gear rewards: open problem
+## Giving items (gear.cpp)
 
-`add_game_item` entries look like `{"item_slug":"<definition GUID as %08X x4>","user_data":...}`.
-`batch_apply.cpp:AddGear` mirrors `MK11Unlockables::Unlock(FGUserEntity*, FName, ...)`:
-`FindItemDefinition` → `GearItem(handle, 1)` → `InventoryManager::AddItem` with a `BILootDropSourceData`
-and an `EquipmentRefType`. A replay with three GUIDs taken from the save closed the game before
-`FindItemDefinition` returned (no log line after "gear ... ..."), and the module's user-exception
-handler logged nothing, so it was probably an abort rather than a CPU fault.
+`gear::Add` mirrors `MK11Unlockables::Unlock(FGUserEntity*, FName, ...)`:
+- `FindItemDefinition`
+- `GearItem(handle, character level)`
+- `InventoryManager::AddItem`
 
-Leads to try first:
-- whether those 16 bytes in the save really are definition GUIDs;
-- `ProcSafeStackObject` inside `BILootDropSourceData`, which may assert on the stack it lives on;
-- stack size: `AddGear` puts about 1.1 KB of buffers on the Krypt proc's stack.
+`AddItem` ignores its `BILootDropSourceData` argument. It calls `InventoryData::InternalAddItem` →
+`RequestOnlineInventoryAddItem`, which applies the item locally (`OnUpdateItem`) and also queues an
+`add_game_item` for Hydra. The game saves the item to its profile save on its own.
+
+The v0.1 crash was in the cleanup: it called `MKItem::~MKItem` on the `GearItem`. The game tears
+`GearItem` down field by field (`DestroyGearItem`).
+
+Item notes:
+- `items.txt` slot `Socket_Gold` = character augments. Each has four definitions, one per level
+  (`..`, `..2`, `..3`, `..4` = Lvl. 1–4).
+- In Kustomize → Manage Augments, the generic ones are under Dragon Blood. Move-specific ones like
+  Squared Up and Feeding Frenzy were not found in a quick look; they are in the inventory though
+  (`inventory.txt`).
+- Kustomize shows "Unable to sync your online inventory": answer Yes. It says variation changes are
+  temporary offline; whether loadout edits persist is untested.
 
 ## Tooling
 

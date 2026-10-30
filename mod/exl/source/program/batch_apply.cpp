@@ -1,6 +1,7 @@
 #include "batch_apply.hpp"
 #include "config.hpp"
 #include "game.hpp"
+#include "gear.hpp"
 #include "krypt_store.hpp"
 #include "log.hpp"
 #include <cstdio>
@@ -84,51 +85,6 @@ namespace mk11::batch {
             return true;
         }
 
-        // Adds one gear item to the local inventory the way MK11Unlockables::Unlock does:
-        // the slug is the item definition GUID printed as "%08X%08X%08X%08X".
-        bool AddGear(void* user, const char* slug) {
-            if (strlen(slug) != 32) return false;
-            u32 guid[4];
-            for (int i = 0; i < 4; i++) {
-                char part[9];
-                memcpy(part, slug + i * 8, 8);
-                part[8] = 0;
-                guid[i] = (u32)strtoul(part, nullptr, 16);
-            }
-            u64 lo = guid[0] | (u64)guid[1] << 32;
-            u64 hi = guid[2] | (u64)guid[3] << 32;
-            if (!game::Fn<void* (*)(u64, u64)>(off::InventoryManager_FindItemDefinition)(lo, hi)) {
-                Log("batch: gear %s has no item definition, skipped", slug);
-                return false;
-            }
-
-            const uintptr_t base = exl::util::modules::GetTargetStart();
-            alignas(16) u8 gear[0x400] = {};
-            game::Fn<void (*)(void*, u64, u64, int)>(off::GearItem_Ctor)(gear, lo, hi, 1);
-
-            alignas(16) u8 source[0x30] = {};
-            game::Fn<void (*)(void*, const char*)>(off::BILootDropSourceData_Ctor)(source, "KRYPT");
-
-            // EquipmentRefType { vtable, FGUserEntityHandle (null), flag }
-            alignas(16) u8 ref[0x20] = {};
-            *reinterpret_cast<u64*>(ref) = *reinterpret_cast<u64*>(base + off::Got_EquipmentRefTypeVtable) + 0x10;
-            game::Fn<void (*)(void*)>(off::FGUserEntityHandle_Ctor)(ref + 8);
-            game::Fn<void (*)(void*, const void*)>(off::FGUserEntityHandle_SetPointer)(ref + 8, nullptr);
-            ref[12] = 0;
-
-            bool ok = game::Fn<bool (*)(void*, void*, void*, void*)>(off::InventoryManager_AddItem)(user, gear, source, ref);
-
-            // ~BILootDropSourceData, as the game writes it out inline.
-            *reinterpret_cast<u64*>(source) = *reinterpret_cast<u64*>(base + off::Got_BILootDropSourceDataVtable) + 0x10;
-            *reinterpret_cast<s32*>(source + 0x28) = 0;
-            game::Fn<void (*)(void*)>(off::TArrayBase_Dtor)(source + 0x20);
-            *reinterpret_cast<s32*>(source + 0x18) = 0;
-            game::Fn<void (*)(void*)>(off::TArrayBase_Dtor)(source + 0x10);
-            game::Fn<void (*)(void*)>(off::ProcSafeStackObject_Dtor)(source);
-            game::Fn<void (*)(void*)>(off::MKItem_Dtor)(gear);
-            return ok;
-        }
-
         bool IsEmptyArray(const char* json, const char* key) {
             char pat[64];
             snprintf(pat, sizeof(pat), "\"%s\":[]", key);
@@ -165,8 +121,7 @@ namespace mk11::batch {
                 Log("batch: gear %s kept for later (apply_gear_rewards=0)", slug);
                 return;
             }
-            Log("batch: gear %s ...", slug);
-            Log("batch: gear %s -> %s", slug, AddGear(user, slug) ? "added" : "NOT added");
+            gear::Add(user, slug);
         });
 
         for (const char* kind : { "unlock_item", "lock_item", "create_instance", "update_data" })
