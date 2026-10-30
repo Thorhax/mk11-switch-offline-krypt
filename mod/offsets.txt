@@ -1,0 +1,61 @@
+# Hook targets (exact demangled names from work/main.syms.dm.txt)
+FGUserEntity_IsConnectedToHydra = FGUserEntity::IsConnectedToHydra() const
+MKOnline_IsAnyUserHydraConnected = MKOnline_IsAnyUserHydraConnected()
+MKOnline_IsSignedIntoFirstParty = MKOnline_IsSignedIntoFirstParty(NRS::NRSUserHandle const&)
+MainMenuMode_SetMenuRequiresOnlineConnection = MainMenuMode::SetMenuRequiresOnlineConnection(bool)
+InventoryUtils_SetInventoryOfflineMode = InventoryUtils::SetInventoryOfflineMode(FGUserEntity*)
+MK11KryptGameMode_EnterMode = MK11KryptGameMode::EnterMode(FGUserEntity*)
+MK11KryptGameMode_InitializeKryptMode = MK11KryptGameMode::InitializeKryptMode(bool)
+InventoryUtils_EnsureInventoryIsDoneSyncing = InventoryUtils::EnsureInventoryIsDoneSyncing(FGUserEntity*, bool)
+GameMode_RequiresOnlineConnection_Native = MKS::_GameMode_RequiresOnlineConnectionC(MKS::VM*)
+FGUserEntity_IsConnectedToHydra_Native = MKS::_FGUserEntity_IsConnectedToHydraC(MKS::VM*)
+KryptFeed_WaitForFinishWithCancel = MK11KryptProgressionFeedObj::WaitForFinishWithCancel()
+FGUserEntityHandle_ToPtr = FGUserEntityHandle::operator FGUserEntity*() const
+MKS_MainMenu_GoingToKrypt = MKS_MainMenu::GoingToKrypt(MKS::VM*)
+KryptBatchUpdate = MK11HydraSSCInterface::KryptBatchUpdate(FGUserEntity*, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, TMap<NRS::NRSBasicString<NRS::DefaultContainerAllocator>, MK11KryptSaveByteStream, NRS::DefaultContainerAllocator> const&, FGOnlineInventoryBatch&, NRS::Function<void (bool, HydraHandle<OnlineHydraSSC>)> const&)
+KryptSaveRestore_Save = MK11KryptSaveRestore::Save(TArray<FKryptSaveDataBase const*, 8u, NRS::DefaultContainerAllocator> const&, FGOnlineInventoryBatch&, NRS::Function<void (bool, HydraHandle<OnlineHydraSSC>)> const&)
+# Call sites inside MKS_MainMenu::GoingToKrypt (script lines 2964 and 3039)
+GoingToKrypt_IsUserSignedInCall = 0x5b0e3b4
+GoingToKrypt_EnsureInventorySyncedCall = 0x5b0e978
+ShowOKMsgBox = ShowOKMsgBox(GAMEPAD*, void const*, unsigned int, UIScreenGroup)
+ForceAttemptToReconnect = ForceAttemptToReconnect()
+MKOnline_IsUserSignedIn = MKOnline_IsUserSignedIn(FGUserEntity*, bool, bool*)
+VM_CallScriptFunction_bool = bool MKS::VM::CallScriptFunction<bool>(MKS::ScriptObj*, unsigned int, unsigned int, ...)
+# GoingToKrypt line 2956: IsRestrictedFromEnteringOnlineFeature script call
+GoingToKrypt_IsRestrictedCall = 0x5b0e248
+# Stage 2: Krypt save data kept on the console
+KryptSaveRestore_Restore = MK11KryptSaveRestore::RestoreKryptData(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, FKryptSaveDataBase&, FGUserEntity const&)
+GetKryptBackgroundName = GetKryptBackgroundName()
+OnlineValue_New = OnlineValue::operator new(unsigned long)
+OnlineValueMap_Ctor = OnlineValueMap::OnlineValueMap()
+OnlineValueHandle_FromPtr = OnlineValueHandle::OnlineValueHandle(OnlineValue*)
+OnlineValueHandle_Dtor = OnlineValueHandle::~OnlineValueHandle()
+OnlineValue_ToJsonString = OnlineValue::ToJsonString(int) const
+OnlineValueUtils_ParseFromJson = OnlineValueUtils::ParseFromJson(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&)
+NRSString_FromCStr = NRS::NRSBasicString<NRS::DefaultContainerAllocator>::NRSBasicString(char const*)
+TArrayBase_Dtor = TArrayBase<void, NRS::DefaultContainerAllocator>::~TArrayBase()
+InventoryBatch_IsEmpty = FGOnlineInventoryBatch::IsEmpty() const
+InventoryBatch_GetBatchSize = FGOnlineInventoryBatch::GetBatchSize() const
+Game_malloc = malloc
+Game_free = free
+MK11Krypt_InitializeKrypt = MK11Krypt::InitializeKrypt()
+InventoryBatch_ToOnlineValue = FGOnlineInventoryBatch::ToOnlineValue()
+# Stage 3: offline wallet for Koins and Hearts (MK11 keeps no offline balance for them)
+ExperienceView_GetExperience = ExperienceView::GetExperience() const
+ExperienceView_OnInventoryUpdated = ExperienceView::OnInventoryUpdated(int)
+GetActiveModeUser = GetActiveModeUser(int, unsigned int)
+GMK11Unlockables = GMK11Unlockables
+MK11Unlockables_UnlockPageBit = MK11Unlockables::Unlock(FGUserEntity*, unsigned int, unsigned int)
+MK11Krypt_RefreshWallet = MK11Krypt::RefreshWallet()
+# Gear rewards (add_game_item)
+InventoryManager_FindItemDefinition = InventoryManager::FindItemDefinition(FItemDefinitionHandle)
+InventoryManager_AddItem = InventoryManager::AddItem(FGUserEntity*, GearItem const&, BILootDropSourceData const&, EquipmentRefType*)
+GearItem_Ctor = GearItem::GearItem(FItemDefinitionHandle, int)
+MKItem_Dtor = 0x2ebf98
+BILootDropSourceData_Ctor = BILootDropSourceData::BILootDropSourceData(char const*)
+ProcSafeStackObject_Dtor = 0x17c0770
+FGUserEntityHandle_Ctor = FGUserEntityHandle::FGUserEntityHandle()
+FGUserEntityHandle_SetPointer = FGUserEntityHandle::SetPointer(FGUserEntity const*)
+# GOT slots holding vtable addresses (see MK11Unlockables::Unlock / BILootDropSourceData ctor)
+Got_EquipmentRefTypeVtable = 0xabb6320
+Got_BILootDropSourceDataVtable = 0xabb62a8

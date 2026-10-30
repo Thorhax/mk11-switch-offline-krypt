@@ -1,0 +1,19 @@
+# Game data dumped from the console (copyrighted; never commit)
+/exefs/
+/work/
+/control.nacp
+/dump.log
+/ref/
+# Personal save data and console logs
+/save-backup/
+/logs/
+# Build outputs (rebuild with mod/build.sh)
+/mod/exl/build/
+/mod/deploy/
+/mod/releases/**/main.npdm
+/tools/dumper/build/
+__pycache__/
+# Upstream exlaunch checkout (mod/exl is the working copy)
+/third_party/
+# Local rig settings with the console login
+/tools/rig/rig.local.json
