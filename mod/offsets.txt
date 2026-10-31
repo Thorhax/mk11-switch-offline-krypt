@@ -138,7 +138,15 @@ FGUserEntity_GetLastPortalRequestTime = FGUserEntity::GetLastPortalRequestTime()
 DateTime_CurrentGameTime = NRSDate::DateTime::CurrentGameTime()
 DateTime_GetYear = NRSDate::DateTime::GetYear() const
 # GoingToPortalsHelper (Towers of Time menu): portal feed and connection checks
+# GoingToPortalsHelper: ForceAttemptToReconnect (false = "must be signed in to a Nintendo Account"), then a
+# script check whose true result shows another error box before the feed checks.
+GoingToPortals_ReconnectCall = 0x5b11b58
+GoingToPortals_ScriptErrorCheckCall = 0x5b11ba0
 GoingToPortals_WaitForFeedCall = 0x5b11cb0
 GoingToPortals_FeedSuccessfulCall = 0x5b11d1c
 GoingToPortals_IsConnectedCall = 0x5b11d2c
 GoingToPortals_FeedUpToDateCall = 0x5b11d38
+DateTime_PlatformGetNetworkUTC = NRSDate::DateTime::PlatformGetNetworkUTC()
+DateTime_CurrentUserUTC = NRSDate::DateTime::CurrentUserUTC()
+MK11OnlinePortalObj_CreateEventsAndStages = MK11OnlinePortalObj::CreateEventsAndStages()
+MK11PortalObj_CreateEventsAndStages = MK11PortalObj::CreateEventsAndStages()

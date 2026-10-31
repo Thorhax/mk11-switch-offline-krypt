@@ -116,8 +116,14 @@ namespace mk11::off {
     constexpr ptrdiff_t FGUserEntity_GetLastPortalRequestTime = 0x265df90; // FGUserEntity::GetLastPortalRequestTime() const
     constexpr ptrdiff_t DateTime_CurrentGameTime = 0x1d1b7bc; // NRSDate::DateTime::CurrentGameTime()
     constexpr ptrdiff_t DateTime_GetYear = 0x1d1ae48; // NRSDate::DateTime::GetYear() const
+    constexpr ptrdiff_t GoingToPortals_ReconnectCall = 0x5b11b58;
+    constexpr ptrdiff_t GoingToPortals_ScriptErrorCheckCall = 0x5b11ba0;
     constexpr ptrdiff_t GoingToPortals_WaitForFeedCall = 0x5b11cb0;
     constexpr ptrdiff_t GoingToPortals_FeedSuccessfulCall = 0x5b11d1c;
     constexpr ptrdiff_t GoingToPortals_IsConnectedCall = 0x5b11d2c;
     constexpr ptrdiff_t GoingToPortals_FeedUpToDateCall = 0x5b11d38;
+    constexpr ptrdiff_t DateTime_PlatformGetNetworkUTC = 0x1d1b73c; // NRSDate::DateTime::PlatformGetNetworkUTC()
+    constexpr ptrdiff_t DateTime_CurrentUserUTC = 0x1d1b840; // NRSDate::DateTime::CurrentUserUTC()
+    constexpr ptrdiff_t MK11OnlinePortalObj_CreateEventsAndStages = 0x21a8e04; // MK11OnlinePortalObj::CreateEventsAndStages()
+    constexpr ptrdiff_t MK11PortalObj_CreateEventsAndStages = 0x21a3d78; // MK11PortalObj::CreateEventsAndStages()
 }
