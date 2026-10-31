@@ -13,7 +13,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Chest costs deducted | Works |
 | Chest unlockables (concept art etc.) granted | Works (local profile unlock bits) |
 | Gear rewards from chests | Fixed in v0.2 (on via `apply_gear_rewards=1`), not yet seen from a real chest |
-| Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart |
+| Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize |
 | Time Krystals | Never touched |
 | Online modes | Unchanged: the patches only affect the Krypt entry path |
 
@@ -92,11 +92,9 @@ The v0.1 crash was in the cleanup: it called `MKItem::~MKItem` on the `GearItem`
 Item notes:
 - `items.txt` slot `Socket_Gold` = character augments. Each has four definitions, one per level
   (`..`, `..2`, `..3`, `..4` = Lvl. 1–4).
-- In Kustomize → Manage Augments, the generic ones are under Dragon Blood. Move-specific ones like
-  Squared Up and Feeding Frenzy were not found in a quick look; they are in the inventory though
-  (`inventory.txt`).
-- Kustomize shows "Unable to sync your online inventory": answer Yes. It says variation changes are
-  temporary offline; whether loadout edits persist is untested.
+- In Kustomize → Manage Augments, the generic ones are under Dragon Blood.
+- Kustomize shows "Unable to sync your online inventory": answer Yes. Granted augments (Mileena's
+  Lvl. 4 set, 2026-10-31) can then be found and equipped; the user tested this on the console.
 
 ## Tooling
 
