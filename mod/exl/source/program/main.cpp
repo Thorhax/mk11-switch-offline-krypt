@@ -73,12 +73,14 @@ namespace {
         game::Fn<void (*)(void*)>(off::MK11Krypt_RefreshWallet)(s_Krypt);
     }
 
-    // OnlineHydraSSC (OnlineHydraBase): +64 request state (3 = complete), +0x48 OnlineError whose
+    // OnlineHydraSSC (OnlineHydraBase, 0x108 bytes): +8 reference count, +64 request state (3 = complete), +0x48 OnlineError whose
     // +8 code is negative on failure, +0xe8 the response OnlineValueHandle.
     constexpr ptrdiff_t SscStateOffset = 64;
     constexpr ptrdiff_t SscErrorCodeOffset = 0x50;
     constexpr ptrdiff_t SscResponseOffset = 0xe8;
     constexpr s32 SscStateComplete = 3;
+    constexpr int SscSize = 0x108;
+    constexpr ptrdiff_t SscRefCountOffset = 8;
 
     // The object text that follows `"key":` in `json` ("{...}"), or false.
     bool FindObject(const char* json, const char* key, const char** start, size_t* len) {
@@ -100,24 +102,27 @@ namespace {
     // The Krypt shows chest and vase rewards from the Hydra response to its save
     // (GChestSSCHandle, read by MK11Krypt::ProcessPendingServerRewardRequest) and raises
     // ErrorContactingServer when that request did not succeed. So each save returns a completed,
-    // successful OnlineHydraSSC whose response is {"rewards": <the batch's user_data.data>},
-    // which carries the unlockTracker items the reward pop-up lists.
+    // successful OnlineHydraSSC whose response is {"rewards": {"items": [], "user_data": <the batch's
+    // user_data>}}. UnlockTracker::AddUnlockMessageFromOnlinePayload reads the pop-up's items from
+    // rewards.user_data.data.unlockTracker, as the server echoes them.
     void CompletedResponse(game::HydraHandle* out, const char* batchJson) {
         void* user = game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1);
-        if (!user) return;
+        if (!user) { Log("Krypt save: no user for the server reply"); return; }
         const void* userHandle = game::Fn<const void* (*)(void*)>(off::FGUserEntity_GetUserHandle)(user);
-        void* hydra = game::Fn<void* (*)()>(off::OnlineHydra_GetInstance)();
-        game::HydraHandle created = game::Fn<game::HydraHandle (*)(void*, const void*)>(off::OnlineHydra_InitSSC)(hydra, userHandle);
-        out->value = created.value;
-        auto ssc = static_cast<u8*>(out->value);
-        if (!ssc) return;
+        // Built like OnlineHydra::HydraObjectInit<OnlineHydraSSC>, which returns nothing while offline;
+        // the request is not queued with OnlineHydra, so nothing ever sends it.
+        auto ssc = static_cast<u8*>(game::Fn<void* (*)(int, int)>(off::IsolatedLongTermAllocator_Malloc)(SscSize, 8));
+        if (!ssc) { Log("Krypt save: server reply allocation failed"); return; }
+        game::Fn<void (*)(void*, const void*)>(off::OnlineHydraSSC_Ctor)(ssc, userHandle);
+        __atomic_add_fetch(reinterpret_cast<s32*>(ssc + SscRefCountOffset), 1, __ATOMIC_SEQ_CST);
+        out->value = ssc;
 
         const char* rewards = nullptr;
         size_t rewardsLen = 0;
         char* text = nullptr;
-        if (batchJson && FindObject(batchJson, "\"user_data\":{\"data\":", &rewards, &rewardsLen)) {
-            text = static_cast<char*>(malloc(rewardsLen + 16));
-            if (text) snprintf(text, rewardsLen + 16, "{\"rewards\":%.*s}", (int)rewardsLen, rewards);
+        if (batchJson && FindObject(batchJson, "\"user_data\":", &rewards, &rewardsLen)) {
+            text = static_cast<char*>(malloc(rewardsLen + 48));
+            if (text) snprintf(text, rewardsLen + 48, "{\"rewards\":{\"items\":[],\"user_data\":%.*s}}", (int)rewardsLen, rewards);
         }
         game::NRSString json(text ? text : "{}");
         free(text);
@@ -130,6 +135,7 @@ namespace {
         }
         *reinterpret_cast<s32*>(ssc + SscErrorCodeOffset) = 0;
         *reinterpret_cast<s32*>(ssc + SscStateOffset) = SscStateComplete;
+        Log("Krypt save: server reply %p (%s)", ssc, rewardsLen ? "with rewards" : "empty");
     }
 
     // Store keys are "<background>/<save key>" so DLC backgrounds cannot collide.
@@ -231,6 +237,29 @@ HOOK_DEFINE_TRAMPOLINE(SpendableBalance) {
     }
 };
 
+HOOK_DEFINE_TRAMPOLINE(KryptServerResponse) {
+    static bool Callback(game::HydraHandle* handle) {
+        auto ssc = static_cast<u8*>(handle ? handle->value : nullptr);
+        if (ssc)
+            Log("server reply check: %p state %d code %#x", ssc, *reinterpret_cast<s32*>(ssc + SscStateOffset),
+                *reinterpret_cast<u32*>(ssc + SscErrorCodeOffset));
+        else
+            Log("server reply check: no request");
+        bool ok = Orig(handle);
+        Log("server reply check: %s", ok ? "success" : "failed");
+        return ok;
+    }
+};
+
+// Logs which code raised a Krypt critical error ("error contacting the server" kicks you out).
+HOOK_DEFINE_TRAMPOLINE(KryptCriticalError) {
+    static void Callback(const void* message, bool fatal) {
+        uintptr_t lr = reinterpret_cast<uintptr_t>(__builtin_return_address(0));
+        Log("Krypt critical error raised from main+%#lx (fatal %d)", lr - exl::util::modules::GetTargetStart(), fatal);
+        Orig(message, fatal);
+    }
+};
+
 HOOK_DEFINE_TRAMPOLINE(KryptInitialize) {
     static void Callback(void* krypt) {
         Orig(krypt);
@@ -265,6 +294,8 @@ extern "C" void exl_main(void* x0, void* x1) {
     KryptInitialize::InstallAtOffset(off::MK11Krypt_InitializeKrypt);
     WalletGet::InstallAtOffset(off::ExperienceView_GetExperience);
     WalletSet::InstallAtOffset(off::ExperienceView_OnInventoryUpdated);
+    KryptCriticalError::InstallAtOffset(off::MK11KryptCriticalError_Display);
+    KryptServerResponse::InstallAtOffset(off::Krypt_WaitForServerResponse);
     SpendableBalance::InstallAtOffset(off::SpendableItemInventory_GetCurrentBalance);
 }
 

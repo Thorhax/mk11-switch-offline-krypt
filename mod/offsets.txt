@@ -44,8 +44,12 @@ InventoryBatch_ToOnlineValue = FGOnlineInventoryBatch::ToOnlineValue()
 ExperienceView_GetExperience = ExperienceView::GetExperience() const
 ExperienceView_OnInventoryUpdated = ExperienceView::OnInventoryUpdated(int)
 FGUserEntity_GetUserHandle = FGUserEntity::GetUserHandle() const
-OnlineHydra_GetInstance = OnlineHydra::GetInstance()
-OnlineHydra_InitSSC = HydraHandle<OnlineHydraSSC> OnlineHydra::HydraObjectInit<OnlineHydraSSC>(NRS::NRSUserHandle)
+# Unnamed helper after KryptLootTable::GetLootTable(): waits for a HydraHandle<OnlineHydraSSC> and
+# returns whether it completed successfully (used by OnReward and ProcessPendingServerRewardRequest).
+Krypt_WaitForServerResponse = 0x2137878
+MK11KryptCriticalError_Display = MK11KryptCriticalError::Display(void const*, bool)
+IsolatedLongTermAllocator_Malloc = IsolatedLongTermAllocator::Malloc(int, int)
+OnlineHydraSSC_Ctor = OnlineHydraSSC::OnlineHydraSSC(NRS::NRSUserHandle)
 SpendableItemInventory_GetCurrentBalance = SpendableItemInventory::GetCurrentBalance(SpendableItemDefinition const&) const
 GetActiveModeUser = GetActiveModeUser(int, unsigned int)
 GMK11Unlockables = GMK11Unlockables
