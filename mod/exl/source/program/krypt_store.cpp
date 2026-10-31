@@ -134,8 +134,12 @@ namespace mk11::store {
         return s_Count;
     }
 
-    void RecordBatch(const char* json) {
-        constexpr const char* Path = "mk11sd:/mk11offline/inventory_batches.jsonl";
+    void RecordBatch(const char* json) { AppendLine("inventory_batches.jsonl", json); }
+
+    void AppendLine(const char* file, const char* json) {
+        char path[128];
+        snprintf(path, sizeof(path), "mk11sd:/mk11offline/%s", file);
+        const char* Path = path;
         if (!MountSd()) return;
         size_t n = strlen(json);
         char* line = static_cast<char*>(game::Malloc(n + 1));

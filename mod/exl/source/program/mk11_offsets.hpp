@@ -29,6 +29,7 @@ namespace mk11::off {
     constexpr ptrdiff_t KustomizeDlcSyncPromptCall = 0x5b126dc;
     constexpr ptrdiff_t FightingSyncPromptCall = 0x5b121ac;
     constexpr ptrdiff_t EndpointsShowErrorCall = 0x1937890;
+    constexpr ptrdiff_t GoingToKlassic_EnsureInventorySyncedCall = 0x5b112bc;
     constexpr ptrdiff_t KryptSaveRestore_Restore = 0x21695c8; // MK11KryptSaveRestore::RestoreKryptData(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, FKryptSaveDataBase&, FGUserEntity const&)
     constexpr ptrdiff_t GetKryptBackgroundName = 0x211caec; // GetKryptBackgroundName()
     constexpr ptrdiff_t OnlineValue_New = 0x1a1f280; // OnlineValue::operator new(unsigned long)
@@ -80,4 +81,17 @@ namespace mk11::off {
     constexpr ptrdiff_t SlotDefinitionHandle_GetReference = 0x22ab410; // FSlotDefinitionHandle::GetReference() const
     constexpr ptrdiff_t Got_FNameEntries = 0xab7c730;
     constexpr ptrdiff_t FGUserEntity_GetInventoryData = 0x265d808; // FGUserEntity::GetInventoryData()
+    constexpr ptrdiff_t MK11KlassicPortalMode_CreatePortals = 0x20f64a4; // MK11KlassicPortalMode::CreatePortals()
+    constexpr ptrdiff_t MK11KlassicPortalMode_IsEligibleForFullExperience = 0x20f65c8; // MK11KlassicPortalMode::IsEligibleForFullExperience(FGUserEntity*)
+    constexpr ptrdiff_t MK11KlassicPortalObj_Ctor = 0x21a90a0; // MK11KlassicPortalObj::MK11KlassicPortalObj(FGUserEntity*, PortalGOSData*)
+    constexpr ptrdiff_t MK11PortalObj_PortalObjInit = 0x21a3cd4; // MK11PortalObj::PortalObjInit(char const*, PortalObjType)
+    constexpr ptrdiff_t MK11PortalObj_GenerateServerData = 0x21a70fc; // MK11PortalObj::GenerateServerData(PortalSSCData&)
+    constexpr ptrdiff_t PortalSSCData_Ctor = 0x21ac71c; // PortalSSCData::PortalSSCData()
+    constexpr ptrdiff_t PortalSSCData_ToJsonString = 0x2196d68; // PortalSSCData::ToJsonString(int) const
+    constexpr ptrdiff_t UpdatePortalGOSObject = 0x21ad3ac; // UpdatePortalGOSObject(FGUserEntity*, OnlineValueHandle const&)
+    constexpr ptrdiff_t MK11PortalInfo_GetPortalGOSData = 0x21854d0; // MK11PortalInfo::GetPortalGOSData(FGUserEntity*, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&)
+    constexpr ptrdiff_t MK11PortalSSC_UpdatePortal = 0x21a8588; // MK11PortalSSC::UpdatePortal(FGUserEntity*, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, unsigned long, TArray<OnlineValueHandle, 8u, NRS::DefaultContainerAllocator>&, OnlineValueHandle const&)
+    constexpr ptrdiff_t MK11PortalSSC_UpdatePortalEvent = 0x21a7b38; // MK11PortalSSC::UpdatePortalEvent(FGUserEntity*, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, unsigned long, int, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, int, TArray<OnlineValueHandle, 8u, NRS::DefaultContainerAllocator>&, OnlineValueHandle const*)
+    constexpr ptrdiff_t MK11PortalSSC_UpdateMultiplePortals = 0x21ae620; // MK11PortalSSC::UpdateMultiplePortals(FGUserEntity*, OnlineValueHandle const&)
+    constexpr ptrdiff_t OperatorNew = 0x10c1288; // operator new(unsigned long)
 }

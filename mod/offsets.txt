@@ -31,6 +31,8 @@ FightingSyncPromptCall = 0x5b121ac
 # OnlineSystemGetEndpoints::FiberExecute: nn::err::ShowError call that shows 2123-0011 at boot when
 # the endpoint lookup fails (the game then carries on offline either way).
 EndpointsShowErrorCall = 0x1937890
+# GoingToKlassicPortals: EnsureInventoryIsDoneSyncing in the full-experience branch (like GoingToKrypt).
+GoingToKlassic_EnsureInventorySyncedCall = 0x5b112bc
 # Stage 2: Krypt save data kept on the console
 KryptSaveRestore_Restore = MK11KryptSaveRestore::RestoreKryptData(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, FKryptSaveDataBase&, FGUserEntity const&)
 GetKryptBackgroundName = GetKryptBackgroundName()
@@ -94,3 +96,18 @@ Got_FNameEntries = 0xab7c730
 # Inventory dump (item_dump.cpp): InventoryData +0x18 is TMap<HydraID, GearItemSaveData> (0xb8-byte
 # elements, definition GUID at +0x44), see InventoryData::GetRefByItemIndex
 FGUserEntity_GetInventoryData = FGUserEntity::GetInventoryData()
+
+# Towers (portals.cpp)
+MK11KlassicPortalMode_CreatePortals = MK11KlassicPortalMode::CreatePortals()
+MK11KlassicPortalMode_IsEligibleForFullExperience = MK11KlassicPortalMode::IsEligibleForFullExperience(FGUserEntity*)
+MK11KlassicPortalObj_Ctor = MK11KlassicPortalObj::MK11KlassicPortalObj(FGUserEntity*, PortalGOSData*)
+MK11PortalObj_PortalObjInit = MK11PortalObj::PortalObjInit(char const*, PortalObjType)
+MK11PortalObj_GenerateServerData = MK11PortalObj::GenerateServerData(PortalSSCData&)
+PortalSSCData_Ctor = PortalSSCData::PortalSSCData()
+PortalSSCData_ToJsonString = PortalSSCData::ToJsonString(int) const
+UpdatePortalGOSObject = UpdatePortalGOSObject(FGUserEntity*, OnlineValueHandle const&)
+MK11PortalInfo_GetPortalGOSData = MK11PortalInfo::GetPortalGOSData(FGUserEntity*, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&)
+MK11PortalSSC_UpdatePortal = MK11PortalSSC::UpdatePortal(FGUserEntity*, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, unsigned long, TArray<OnlineValueHandle, 8u, NRS::DefaultContainerAllocator>&, OnlineValueHandle const&)
+MK11PortalSSC_UpdatePortalEvent = MK11PortalSSC::UpdatePortalEvent(FGUserEntity*, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, unsigned long, int, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, int, TArray<OnlineValueHandle, 8u, NRS::DefaultContainerAllocator>&, OnlineValueHandle const*)
+MK11PortalSSC_UpdateMultiplePortals = MK11PortalSSC::UpdateMultiplePortals(FGUserEntity*, OnlineValueHandle const&)
+OperatorNew = operator new(unsigned long)

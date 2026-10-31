@@ -15,6 +15,8 @@ namespace mk11::store {
     // Appends one Krypt inventory batch (JSON) to sdmc:/mk11offline/inventory_batches.jsonl, so the
     // rewards the server would have granted are kept until they can be applied on the console.
     void RecordBatch(const char* json);
+    // Appends `json` as one line to sdmc:/mk11offline/<file>.
+    void AppendLine(const char* file, const char* json);
 
     // Test aid: returns the contents of sdmc:/mk11offline/replay_batch.json once (then deletes it),
     // or nullptr. The caller frees the result with game::Free.
