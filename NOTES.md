@@ -212,7 +212,8 @@ Item notes:
 - Next steps: add rows for the free cells (the script iterates the table itself, so the row count it uses must
   grow too), find the 3-letter keys and portraits, then follow selection into variation/loadout select and fight
   loading. Expect gaps (no loadouts/XP for them); keep it to offline local modes.
-- Logger used: `roster.cpp` (kept out of the build; a copy of the hooks is in the session notes).
+- Logger used: `mod/research/roster.cpp` (not built; copy it into `exl/source/program` with its offsets to use it).
+  The charTable dump in it reads fields 4–5 as strings and crashes on row 2: print only fields 1–3.
 
 ## Tooling
 
