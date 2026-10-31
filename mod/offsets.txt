@@ -171,3 +171,41 @@ GFGStoryInfoStruct = GFGStoryInfoStruct
 UIChapterSelectHUBDriver_Enter = UIChapterSelectHUBDriver::Enter()
 StoryInfo_SetupAndShowRewardsForFight = StoryInfo::SetupAndShowRewardsForFight(int, bool)
 ShowOKMsgBox = ShowOKMsgBox(GAMEPAD*, void const*, unsigned int, UIScreenGroup)
+# The "not connected, you will not receive your rewards until you reconnect" box before chapter select:
+# MKS_MainMenu::StorySubmenu and MKS_MainMenu::StartStoryHUBDriver (Aftermath)
+StoryOfflineWarningCall = 0x5b102a0
+StoryOfflineWarningCall2 = 0x5b0fe9c
+# The Store (ZR): Premium Shop page with the offline catalogue (shop.cpp)
+KombatFeedModalDriver_CheckPremiumShopState = KombatFeedModalDriver::CheckPremiumShopState()
+MK11PremiumShop_Initialize = MK11PremiumShop::Initialize(OnlineValueHandle const&)
+MK11PremiumShop_IsDataValid = MK11PremiumShop::IsDataValid()
+MK11PremiumShop_IsDataExpired = MK11PremiumShop::IsDataExpired()
+MK11PremiumShop_sDownloadState = MK11PremiumShop::sDownloadState
+MK11PremiumShop_sFeaturedItems = MK11PremiumShop::sFeaturedItems
+MK11PremiumShop_sDailyItems = MK11PremiumShop::sDailyItems
+MK11PremiumShop_PurchaseProduct = MK11PremiumShop::PurchaseProduct(FGUserEntity&, MK11PremiumShopAvailability const&, NRS::NRSBasicString<NRS::DefaultContainerAllocator>)
+MK11PremiumShopAvailability_GetPremiumCurrencyCost = MK11PremiumShopAvailability::GetPremiumCurrencyCost(FGUserEntity*) const
+FGOnlineInventoryBatch_AddCurrencyRequest = FGOnlineInventoryBatch::AddCurrencyRequest(NRS::NRSBasicString<NRS::DefaultContainerAllocator>, int, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, BILootDropSourceData const&)
+SpendableItemManager_GetItemDefinitionBySlug = SpendableItemManager::GetItemDefinitionBySlug(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&)
+# MKS_MainMenu::MainMenu_KombatFeedModalLoop: tbz after ForceAttemptToReconnect (-> branch to the open path)
+StoreOpen_ReconnectCheck = 0x5b0b7d8
+# KombatFeedModalDriver::CheckPremiumShopState: bl FGOnlineCheck::CheckRestrictions
+PremiumShop_CheckRestrictionsCall = 0x20d4874
+# KombatFeedModalDriver::TryToPurchasePremiumShopSelection: cbz after MKOnline_HasEthernetLink / IsConnectedToHydra
+PremiumShopPurchase_LinkCheck = 0x20d37c4
+PremiumShopPurchase_HydraCheck = 0x20d37d4
+LootTable_GetNumberOfEnabledItems = LootTable::GetNumberOfEnabledItems() const
+# KombatFeedModalDriver::CheckPremiumShopState: bl InventoryData::GetSyncState (2 = synced)
+PremiumShop_SyncStateCall = 0x20d4a3c
+# Towers of Time summonable towers (portals.cpp)
+MK11PortalSSC_SummonKeyPortal = MK11PortalSSC::SummonKeyPortal(FGUserEntity*, char const*, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, PortalGOSData const*)
+# MKS_PortalSelect::UIPortalSelect_CheckForExpiredPortals: return address of its "has expired" ShowOKMsgBox
+ExpiredPortalNoticeReturn = 0x5b6a8b0
+MK11PremiumShop_TickDownload = MK11PremiumShop::TickDownload()
+KombatFeedModalDriver_EnterPremiumShop = KombatFeedModalDriver::EnterPremiumShop()
+MK11PremiumShopAvailability_HasPurchased = MK11PremiumShopAvailability::HasPurchased() const
+MK11PremiumShopAvailability_IsCharacterLocked = MK11PremiumShopAvailability::IsCharacterLocked() const
+GSlotFileManager = GSlotFileManager
+SlotFileManager_IsSlotLoading = SlotFileManager::IsSlotLoading(int)
+LoadScreenAsync = LoadScreenAsync(char const*, int)
+MKS_MainMenu_KombatFeedModalLoop = MKS_MainMenu::MainMenu_KombatFeedModalLoop(MKS::VM*)

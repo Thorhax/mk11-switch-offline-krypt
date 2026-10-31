@@ -102,6 +102,13 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
    - `game_unlockables` → `MK11Unlockables::Unlock(GMK11Unlockables, user, bit, page)`
    - `add_game_item` → gear (gated)
 
+## Story Mode (main.cpp)
+- Fight rewards: `StoryRewards_IsConnectedCall` lets `SetupAndShowRewardsForFight` prepare them offline and
+  `MK11HydraSSCInterface::RewardStorySequence` applies the proc's batch locally. Chapters finished offline
+  before this get their missing rewards when the chapter select opens (`CatchUpStoryRewards`).
+- The "not connected… you will not receive your rewards until you reconnect" box is skipped in both places
+  that show it (`MKS_MainMenu::StorySubmenu`, `StartStoryHUBDriver` for Aftermath).
+
 ## Towers (portals.cpp)
 
 - Tower content ships with the game (`PortalDefinitions.mko`). Hydra stores one record per tower set,
@@ -132,6 +139,20 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
 - exlaunch's trampoline pool holds 200 bytes per hook; `JitSize` was raised to 0x4000. Module code
   allocates from the game heap (`game::Malloc` etc.), not newlib's malloc.
 
+### Summoned towers (Tower Keys)
+- Summonable Towers → A → Select Tower Key: the confirm is **held** A (a charged button), not a tap.
+- `MK11PortalSSC::SummonKeyPortal` (Hydra `portal_key_activate`: activatePortalName, cost, deactivatePortalId)
+  is answered offline (`SummonKey` hook): the key's record is generated like a Towers of Time one
+  (`TimedPortalObj`, events from `<name>_PortalInit`), stored as `portal/<name>` with `data.type` `"key"`
+  and `unique_key` = the tower name (records are looked up by `data.name`), the key is taken from the wallet,
+  any earlier summoned record is removed.
+- `MK11PortalInfo::CreateKeyPortal` only uses a record whose `data.type` is `"key"` and that is available
+  (`now < data.endTime`). Record JSON cannot carry dates (`UpdatePortalGOSObject` reads them as
+  `OnlineValueDate`, which JSON never produces), so the end is stored as `offlineEndMs` and written into the
+  loaded record (`ApplyStoredEndTime`; PortalGOSData +0x70). Summoned towers last 24 hours.
+- Key slugs: `Portal*Key` spendables (flag 0x10). "Lucky Key" = `PortalPremiumKey` → Test Your Luck (rewards
+  are Konsumables / character items, no Time Krystals).
+
 ## Giving items (gear.cpp)
 
 `gear::Add` mirrors `MK11Unlockables::Unlock(FGUserEntity*, FName, ...)`:
@@ -158,6 +179,24 @@ Item notes:
 - Kustomize shows "Unable to sync your online inventory": answer Yes. Granted augments (Mileena's
   Lvl. 4 set, 2026-10-31) can then be found and equipped; the user tested this on the console.
 
+## Store (ZR) — experimental (shop.cpp, `offline_store=1`)
+- ZR opens `KombatFeedModalDriver` (Premium Shop + eShop pages). Offline the menu script's
+  Nintendo-Account/reconnect check is skipped (`StoreOpen_ReconnectCheck`, applied at runtime only with
+  `offline_store=1`), and the page's restriction and inventory-sync checks pass.
+- Catalogue: `MK11PremiumShop::Initialize` with `{mTopSection: 9 slots, mBottomSection: 1 slot}`; each slot
+  `{mAvailabilities: [{mReward: loot table, mStartTime, mEndTime}]}` (several = quantity choice). Loot table
+  `{dropCount: 1, items: [{LootItemType: "SpendableItemLootItem", dropWeight: 1, id, amount,
+  premiumCurrencyPrice}]}`: `IsDataValid` wants exactly 9 + 1 slots and a non-zero premiumCurrencyPrice;
+  without dropWeight nothing drops. Currency loot items have no shop price. `store.txt` replaces it.
+- Price = Koins: `GetPremiumCurrencyCost` returns the Koin price; `PurchaseProduct` checks the Koin wallet and
+  swaps the batch's `Exp_PremiumCurrency` request for `Exp_Koins` (`AddCurrencyRequest`). Purchases and
+  grants worked (5,000 Koins → PortalKoins1Key).
+- **Open problem:** showing the products (`ShowPremiumShopSelections`) closes the game most of the time;
+  loading the catalogue without showing it never does. Ruled out: timing of the catalogue, the icon
+  packages/libraries, grid cells, product panel, timers, HasPurchased/IsCharacterLocked rules, the message box.
+  Hence off by default.
+- The confirmation text says "Time Krystals" (`KombatFeed.ConfirmPurchase`); the price icon is the Krystal one.
+
 ## Tooling
 
 - **Rig:** `tools/rig/sb.py` drives the console through sys-botbase (buttons, screenshots).
@@ -173,7 +212,8 @@ Item notes:
   - `tools/strrefs.py` lists the string literals a function uses.
 - **Dumps:** `exefs/` came from DBI ("Installed games" → Update → browse → copy). `romfs` was only
   partly copied. sys-botbase can't peek the game's code pages.
-- **Crashes:** Atmosphère writes no crash reports for MK11 on this console. Use the module log, and
-  `crash.cpp`, which hasn't caught anything yet.
+- **Crashes:** neither Atmosphère (no crash report) nor `crash.cpp`'s exception handler sees MK11 crashes
+  on this console — not even a deliberate null write (tested 2026-11-01). SaltyNX attaches to the game at
+  launch (`enableDebug 1`), which likely takes the exception path. Bisect with builds and the module log.
 - **Boot:** 2123-0011 came from `nn::err::ShowError` in `OnlineSystemGetEndpoints::FiberExecute` (main+0x1937890) after the
   endpoint lookup fails; the module skips that call. `system_dialogs.cpp` logs every SDK error dialog with its caller.

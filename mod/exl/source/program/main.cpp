@@ -11,6 +11,7 @@
 #include "log.hpp"
 #include "mk11_offsets.hpp"
 #include "portals.hpp"
+#include "shop.hpp"
 #include "system_dialogs.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -479,7 +480,12 @@ HOOK_DEFINE_TRAMPOLINE(MoviePlay) {
 HOOK_DEFINE_TRAMPOLINE(OkMessageBox) {
     static u64 Callback(void* pad, const void* text, u32 flags, s32 group) {
         uintptr_t lr = reinterpret_cast<uintptr_t>(__builtin_return_address(0));
-        Log("message box from main+%#lx", lr - exl::util::modules::GetTargetStart());
+        uintptr_t offset = lr - exl::util::modules::GetTargetStart();
+        if (offset == off::ExpiredPortalNoticeReturn && portals::TakeSummonNotice()) {
+            Log("message box from main+%#lx skipped (tower just summoned)", offset);
+            return 0;
+        }
+        Log("message box from main+%#lx", offset);
         return Orig(pad, text, flags, group);
     }
 };
@@ -532,6 +538,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     exl::patch::CodePatcher(off::EndpointsShowErrorCall).Write<u32>(0xd503201f);               // nop
     system_dialogs::Install();
     portals::Install();
+    shop::Install();
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);
     MoviePlay::InstallAtOffset(off::MoviePlayer_Movie_Play);
@@ -542,6 +549,9 @@ extern "C" void exl_main(void* x0, void* x1) {
     OkMessageBox::InstallAtOffset(off::ShowOKMsgBox);
     // Story fight rewards are prepared offline too (StoryReward grants them).
     exl::patch::CodePatcher(off::StoryRewards_IsConnectedCall).Write<u32>(0x52800020);         // mov w0, #1
+    // ...so the "you will not receive your rewards until you reconnect" box is wrong: skip it.
+    for (ptrdiff_t call : { off::StoryOfflineWarningCall, off::StoryOfflineWarningCall2 })
+        exl::patch::CodePatcher(call).Write<u32>(0xd503201f);                                  // nop
     KryptCleanup::InstallAtOffset(off::MK11Krypt_CleanupKryptCommon);
     KryptDestroy::InstallAtOffset(off::MK11Krypt_Dtor);
 

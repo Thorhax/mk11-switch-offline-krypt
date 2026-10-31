@@ -10,4 +10,7 @@ namespace mk11::config {
     bool ApplyGearRewards();
     // The studio credits after a tower's character ending are skipped unless skip_tower_credits=0.
     bool SkipTowerCredits();
+    // The Store (ZR) opens with the offline catalogue only when offline_store=1 (experimental: showing the
+    // catalogue can close the game).
+    bool OfflineStore();
 }
