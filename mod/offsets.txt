@@ -111,3 +111,4 @@ MK11PortalSSC_UpdatePortal = MK11PortalSSC::UpdatePortal(FGUserEntity*, NRS::NRS
 MK11PortalSSC_UpdatePortalEvent = MK11PortalSSC::UpdatePortalEvent(FGUserEntity*, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, unsigned long, int, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, int, TArray<OnlineValueHandle, 8u, NRS::DefaultContainerAllocator>&, OnlineValueHandle const*)
 MK11PortalSSC_UpdateMultiplePortals = MK11PortalSSC::UpdateMultiplePortals(FGUserEntity*, OnlineValueHandle const&)
 OperatorNew = operator new(unsigned long)
+FGOnlineInventoryBatch_Post = FGOnlineInventoryBatch::Post(FGUserEntity&, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, NRS::Function<void (HydraHandle<OnlineHydraSSC>, OnlineError const&, OnlineValueHandle const&)>)

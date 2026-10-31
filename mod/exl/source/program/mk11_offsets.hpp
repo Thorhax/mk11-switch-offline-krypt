@@ -94,4 +94,5 @@ namespace mk11::off {
     constexpr ptrdiff_t MK11PortalSSC_UpdatePortalEvent = 0x21a7b38; // MK11PortalSSC::UpdatePortalEvent(FGUserEntity*, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, unsigned long, int, NRS::NRSBasicString<NRS::DefaultContainerAllocator>, int, TArray<OnlineValueHandle, 8u, NRS::DefaultContainerAllocator>&, OnlineValueHandle const*)
     constexpr ptrdiff_t MK11PortalSSC_UpdateMultiplePortals = 0x21ae620; // MK11PortalSSC::UpdateMultiplePortals(FGUserEntity*, OnlineValueHandle const&)
     constexpr ptrdiff_t OperatorNew = 0x10c1288; // operator new(unsigned long)
+    constexpr ptrdiff_t FGOnlineInventoryBatch_Post = 0x204257c; // FGOnlineInventoryBatch::Post(FGUserEntity&, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, NRS::Function<void (HydraHandle<OnlineHydraSSC>, OnlineError const&, OnlineValueHandle const&)>)
 }

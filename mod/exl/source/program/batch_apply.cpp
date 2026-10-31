@@ -94,7 +94,7 @@ namespace mk11::batch {
         }
     }
 
-    void Apply(const char* json) {
+    void Apply(const char* json, bool grantGear) {
         ForEachObject(json, "inc_consumable", [](const char* o, const char* e) {
             char slug[64];
             long long amount = 0;
@@ -119,6 +119,10 @@ namespace mk11::batch {
         ForEachObject(json, "add_game_item", [&](const char* o, const char* e) {
             char slug[64];
             if (!user || !StringField(o, e, "item_slug", slug, sizeof(slug))) return;
+            if (!grantGear) {
+                Log("batch: gear %s not granted here (added by the game itself)", slug);
+                return;
+            }
             if (!config::ApplyGearRewards()) {
                 Log("batch: gear %s kept for later (apply_gear_rewards=0)", slug);
                 return;

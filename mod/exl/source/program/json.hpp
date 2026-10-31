@@ -21,6 +21,10 @@ namespace mk11::json {
     Value* Find(Value* root, const char* path);
     // The string at `v` (nullptr unless it is a string).
     const char* String(const Value* v);
+    // The integer at `v`; false unless it is a number.
+    bool Integer(const Value* v, long long* out);
+    // Replaces the value at the dot path with an integer (creating missing object keys).
+    bool SetInteger(Value* root, const char* path, long long value);
 
     // Compact JSON text; free with std::free.
     char* Serialize(const Value* v);

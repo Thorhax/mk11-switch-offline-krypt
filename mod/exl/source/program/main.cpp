@@ -227,6 +227,27 @@ HOOK_DEFINE_TRAMPOLINE(KryptServerResponse) {
     }
 };
 
+// Inventory batches outside the Krypt (end-of-match rewards "match_completed", user actions, generic
+// sends) all go through FGOnlineInventoryBatch::Post, which fails offline, so their Koins and items
+// were lost. Offline, the batch (serialised through its virtual ToOnlineValue, vtable slot 2) is
+// applied locally first; the original Post then runs as before.
+HOOK_DEFINE_TRAMPOLINE(InventoryPost) {
+    static game::HydraHandle Callback(void* batch, void* user, const game::NRSString* endpoint, void* done) {
+        if (user && !game::Fn<bool (*)(void*)>(off::FGUserEntity_IsConnectedToHydra)(user)) {
+            auto vtable = *reinterpret_cast<void* const* const*>(batch);
+            game::OnlineValueHandle value = reinterpret_cast<game::OnlineValueHandle (*)(void*)>(vtable[2])(batch);
+            if (value.value) {
+                game::NRSString json = game::ToJsonString(value.value);
+                store::RecordBatch(json.c_str());
+                Log("inventory post %s: %.300s", endpoint->c_str(), json.c_str());
+                batch::Apply(json.c_str(), false);
+                RefreshKryptWallet();
+            }
+        }
+        return Orig(batch, user, endpoint, done);
+    }
+};
+
 // Logs which code raised a Krypt critical error ("error contacting the server" kicks you out).
 HOOK_DEFINE_TRAMPOLINE(KryptCriticalError) {
     static void Callback(const void* message, bool fatal) {
@@ -274,6 +295,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     exl::patch::CodePatcher(off::EndpointsShowErrorCall).Write<u32>(0xd503201f);               // nop
     system_dialogs::Install();
     portals::Install();
+    InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
 
     KryptFeedWait::InstallAtOffset(off::KryptFeed_WaitForFinishWithCancel);
     KryptSave::InstallAtOffset(off::KryptSaveRestore_Save);

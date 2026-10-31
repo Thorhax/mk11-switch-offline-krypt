@@ -245,6 +245,21 @@ namespace mk11::json {
 
     const char* String(const Value* v) { return v && v->type == Type::String ? v->text : nullptr; }
 
+    bool Integer(const Value* v, long long* out) {
+        if (!v || v->type != Type::Number) return false;
+        *out = strtoll(v->text, nullptr, 10);
+        return true;
+    }
+
+    bool SetInteger(Value* root, const char* path, long long value) {
+        char text[32];
+        snprintf(text, sizeof(text), "%lld", value);
+        Value number{};
+        number.type = Type::Number;
+        number.text = text;
+        return Set(root, path, &number);
+    }
+
     char* Serialize(const Value* v) {
         Writer w;
         w.Write(v);

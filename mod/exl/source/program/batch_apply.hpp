@@ -7,7 +7,9 @@
 // Other request kinds are logged; the whole batch is also kept in inventory_batches.jsonl.
 
 namespace mk11::batch {
-    void Apply(const char* json);
+    // `grantGear` = false only logs add_game_item entries (for batches whose gear the game already
+    // added locally through InventoryManager::AddItem).
+    void Apply(const char* json, bool grantGear = true);
 }
 
 namespace mk11::wallet {

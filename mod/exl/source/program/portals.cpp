@@ -124,9 +124,16 @@ namespace {
             const char* type = json::String(json::Find(command, "updateType"));
             const char* path = json::String(json::Find(command, "path"));
             json::Value* value = json::Find(command, "value");
-            if (type && path && value && !strcmp(type, "set"))
+            long long amount, current = 0;
+            if (type && path && value && !strcmp(type, "set")) {
                 Log("portals: set %s -> %s", path, json::Set(record, path, value) ? "ok" : "path not found");
-            else
+            } else if (type && path && json::Integer(value, &amount) && (!strcmp(type, "inc") || !strcmp(type, "max"))) {
+                // inc adds to the stored number, max keeps the larger one; a missing number counts as 0
+                bool had = json::Integer(json::Find(record, path), &current);
+                long long result = !strcmp(type, "inc") ? current + amount : (had && current > amount ? current : amount);
+                Log("portals: %s %s %lld -> %lld %s", type, path, current, result,
+                    json::SetInteger(record, path, result) ? "ok" : "path not found");
+            } else
                 Log("portals: command not applied: %.300s", text ? text : "(none)");
             json::Destroy(command);
             free(text);
@@ -158,15 +165,18 @@ namespace {
     // MK11PortalEvent::ExecuteEventCompletedSSCEvent); the server would grant it. Applied here like a
     // Krypt batch. Returns the batch's user_data JSON for the reply (free with std::free), or nullptr.
     char* GrantUnlocks(const char* extraText) {
+        Log("portals: reward data %zu bytes", strlen(extraText));
         json::Value* extra = json::Parse(extraText);
         json::Value* unlocks = json::Find(extra, "unlocks");
+        Log("portals: reward data parsed: %s, unlocks %s", extra ? "yes" : "no", unlocks ? "found" : "none");
         char* userData = nullptr;
         if (unlocks) {
             char* batchText = json::Serialize(unlocks);
             if (batchText) {
-                store::RecordBatch(batchText);
                 Log("portals: tower rewards %.300s", batchText);
+                store::RecordBatch(batchText);
                 batch::Apply(batchText);
+                Log("portals: tower rewards granted");
                 free(batchText);
             }
             userData = json::Serialize(json::Find(unlocks, "user_data"));
@@ -278,8 +288,10 @@ HOOK_DEFINE_TRAMPOLINE(PortalEventUpdate) {
         }
         ApplyCommands(record, *commands);
         char* extraText = ValueJson(extra ? extra->value : nullptr);
+        Log("portals: event extra data %s", extraText ? "read" : "none");
         char* rewards = extraText ? GrantUnlocks(extraText) : nullptr;
         Commit(user, record, key, &reply, rewards);
+        Log("portals: UpdatePortalEvent answered");
         free(rewards);
         free(extraText);
         json::Destroy(record);
