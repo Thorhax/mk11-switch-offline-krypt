@@ -95,4 +95,6 @@ namespace mk11::off {
     constexpr ptrdiff_t MK11PortalSSC_UpdateMultiplePortals = 0x21ae620; // MK11PortalSSC::UpdateMultiplePortals(FGUserEntity*, OnlineValueHandle const&)
     constexpr ptrdiff_t OperatorNew = 0x10c1288; // operator new(unsigned long)
     constexpr ptrdiff_t FGOnlineInventoryBatch_Post = 0x204257c; // FGOnlineInventoryBatch::Post(FGUserEntity&, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, NRS::Function<void (HydraHandle<OnlineHydraSSC>, OnlineError const&, OnlineValueHandle const&)>)
+    constexpr ptrdiff_t MK11Krypt_Dtor = 0x212a6f8; // MK11Krypt::~MK11Krypt()
+    constexpr ptrdiff_t MK11Krypt_CleanupKryptCommon = 0x213256c; // MK11Krypt::CleanupKryptCommon()
 }

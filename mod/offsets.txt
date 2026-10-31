@@ -112,3 +112,5 @@ MK11PortalSSC_UpdatePortalEvent = MK11PortalSSC::UpdatePortalEvent(FGUserEntity*
 MK11PortalSSC_UpdateMultiplePortals = MK11PortalSSC::UpdateMultiplePortals(FGUserEntity*, OnlineValueHandle const&)
 OperatorNew = operator new(unsigned long)
 FGOnlineInventoryBatch_Post = FGOnlineInventoryBatch::Post(FGUserEntity&, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, NRS::Function<void (HydraHandle<OnlineHydraSSC>, OnlineError const&, OnlineValueHandle const&)>)
+MK11Krypt_Dtor = MK11Krypt::~MK11Krypt()
+MK11Krypt_CleanupKryptCommon = MK11Krypt::CleanupKryptCommon()

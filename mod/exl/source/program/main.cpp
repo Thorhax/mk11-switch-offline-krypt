@@ -227,6 +227,22 @@ HOOK_DEFINE_TRAMPOLINE(KryptServerResponse) {
     }
 };
 
+// The Krypt instance is forgotten when the Krypt shuts down, so wallet refreshes outside the Krypt
+// (e.g. end-of-match rewards in towers) never touch a freed MK11Krypt.
+HOOK_DEFINE_TRAMPOLINE(KryptCleanup) {
+    static void Callback(void* krypt) {
+        if (krypt == s_Krypt) s_Krypt = nullptr;
+        Orig(krypt);
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(KryptDestroy) {
+    static void Callback(void* krypt) {
+        if (krypt == s_Krypt) s_Krypt = nullptr;
+        Orig(krypt);
+    }
+};
+
 // Inventory batches outside the Krypt (end-of-match rewards "match_completed", user actions, generic
 // sends) all go through FGOnlineInventoryBatch::Post, which fails offline, so their Koins and items
 // were lost. Offline, the batch (serialised through its virtual ToOnlineValue, vtable slot 2) is
@@ -296,6 +312,8 @@ extern "C" void exl_main(void* x0, void* x1) {
     system_dialogs::Install();
     portals::Install();
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
+    KryptCleanup::InstallAtOffset(off::MK11Krypt_CleanupKryptCommon);
+    KryptDestroy::InstallAtOffset(off::MK11Krypt_Dtor);
 
     KryptFeedWait::InstallAtOffset(off::KryptFeed_WaitForFinishWithCancel);
     KryptSave::InstallAtOffset(off::KryptSaveRestore_Save);
