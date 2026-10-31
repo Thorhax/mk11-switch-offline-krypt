@@ -114,3 +114,7 @@ OperatorNew = operator new(unsigned long)
 FGOnlineInventoryBatch_Post = FGOnlineInventoryBatch::Post(FGUserEntity&, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, NRS::Function<void (HydraHandle<OnlineHydraSSC>, OnlineError const&, OnlineValueHandle const&)>)
 MK11Krypt_Dtor = MK11Krypt::~MK11Krypt()
 MK11Krypt_CleanupKryptCommon = MK11Krypt::CleanupKryptCommon()
+OnlineHydraSSC_Post = OnlineHydraSSC::Post(NRS::NRSUserHandle, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, OnlineValueHandle const&, NRS::Function<void (HydraHandle<OnlineHydraSSC>, OnlineError const&, OnlineValueHandle const&)> const&, bool)
+OnlineError_Ctor = OnlineError::OnlineError(unsigned int, char const*, ...)
+# OnlineError::~OnlineError() complete-object destructor (the other symbol of that name is the deleting one)
+OnlineError_Dtor = 0x12bf088

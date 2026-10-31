@@ -26,6 +26,10 @@ namespace mk11::json {
     // Replaces the value at the dot path with an integer (creating missing object keys).
     bool SetInteger(Value* root, const char* path, long long value);
 
+    // Array elements: the count (0 unless `v` is an array) and the element at `i`.
+    size_t Count(const Value* v);
+    Value* At(const Value* v, size_t i);
+
     // Compact JSON text; free with std::free.
     char* Serialize(const Value* v);
 }

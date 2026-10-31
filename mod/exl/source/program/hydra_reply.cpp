@@ -39,6 +39,24 @@ namespace mk11::hydra {
         *reinterpret_cast<s32*>(ssc + SscStateOffset) = SscStateComplete;
     }
 
+    const game::OnlineValueHandle* Response(const void* ssc) {
+        return reinterpret_cast<const game::OnlineValueHandle*>(static_cast<const u8*>(ssc) + SscResponseOffset);
+    }
+
+    void InvokeCompletion(const void* function, game::HydraHandle* reply) {
+        auto impl = *reinterpret_cast<u8* const*>(function);
+        if (!impl || !reply->value) return;
+        auto callable = *reinterpret_cast<void**>(impl + 0x20);
+        if (!callable) return;
+        // OnlineError (about 0x50 bytes): code 0 = success.
+        alignas(16) u8 error[0x80] = {};
+        game::Fn<void (*)(void*, u32, const char*)>(off::OnlineError_Ctor)(error, 0, nullptr);
+        using CallFn = void (*)(void*, game::HydraHandle*, const void*, const game::OnlineValueHandle*);
+        auto call = (*reinterpret_cast<CallFn**>(callable))[6];
+        call(callable, reply, error, Response(reply->value));
+        game::Fn<void (*)(void*)>(off::OnlineError_Dtor)(error);
+    }
+
     void Describe(const void* ssc, s32* state, u32* code) {
         *state = *reinterpret_cast<const s32*>(static_cast<const u8*>(ssc) + SscStateOffset);
         *code = *reinterpret_cast<const u32*>(static_cast<const u8*>(ssc) + SscErrorCodeOffset);

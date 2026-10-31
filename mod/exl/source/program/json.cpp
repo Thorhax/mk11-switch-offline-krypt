@@ -245,6 +245,9 @@ namespace mk11::json {
 
     const char* String(const Value* v) { return v && v->type == Type::String ? v->text : nullptr; }
 
+    size_t Count(const Value* v) { return v && v->type == Type::Array ? v->count : 0; }
+    Value* At(const Value* v, size_t i) { return i < Count(v) ? v->items[i] : nullptr; }
+
     bool Integer(const Value* v, long long* out) {
         if (!v || v->type != Type::Number) return false;
         *out = strtoll(v->text, nullptr, 10);

@@ -6,6 +6,7 @@
 #include "gear.hpp"
 #include "hydra_reply.hpp"
 #include "item_dump.hpp"
+#include "json.hpp"
 #include "krypt_store.hpp"
 #include "log.hpp"
 #include "mk11_offsets.hpp"
@@ -246,10 +247,41 @@ HOOK_DEFINE_TRAMPOLINE(KryptDestroy) {
 // Inventory batches outside the Krypt (end-of-match rewards "match_completed", user actions, generic
 // sends) all go through FGOnlineInventoryBatch::Post, which fails offline, so their Koins and items
 // were lost. Offline, the batch (serialised through its virtual ToOnlineValue, vtable slot 2) is
-// applied locally first; the original Post then runs as before.
+// applied locally first. The original Post then reaches OnlineHydraSSC::Post, which never calls its
+// completion callback offline; the game only commits the balances it showed ("pending experience")
+// from that callback's response.rewards.items. So that one request is answered here: a completed
+// reply listing the new wallet totals, passed to the callback as the server would.
+namespace {
+    bool s_AnswerBatchPost = false;
+
+    // {"rewards":{"items":[{"id","item_slug","count"}...]}} with the wallet totals of the Koins / Souls /
+    // Hearts the batch body changed.
+    char* BatchReply(const char* body) {
+        json::Value* root = json::Parse(body);
+        json::Value* list = json::Find(root, "rewards.inc_consumable");
+        if (!list) list = json::Find(root, "inc_consumable");
+        size_t size = 64;
+        for (size_t i = 0; i < json::Count(list); i++) size += 96;
+        char* out = static_cast<char*>(malloc(size));
+        int n = snprintf(out, size, "{\"rewards\":{\"items\":[");
+        bool first = true;
+        for (size_t i = 0; i < json::Count(list); i++) {
+            const char* slug = json::String(json::Find(json::At(list, i), "item_slug"));
+            if (!slug || !wallet::Manages(slug) || strstr(out, slug)) continue;
+            n += snprintf(out + n, size - n, "%s{\"id\":\"offline-%s\",\"item_slug\":\"%s\",\"count\":%d}",
+                          first ? "" : ",", slug, slug, wallet::Get(slug));
+            first = false;
+        }
+        snprintf(out + n, size - n, "]}}");
+        json::Destroy(root);
+        return out;
+    }
+}
+
 HOOK_DEFINE_TRAMPOLINE(InventoryPost) {
     static game::HydraHandle Callback(void* batch, void* user, const game::NRSString* endpoint, void* done) {
-        if (user && !game::Fn<bool (*)(void*)>(off::FGUserEntity_IsConnectedToHydra)(user)) {
+        bool offline = user && !game::Fn<bool (*)(void*)>(off::FGUserEntity_IsConnectedToHydra)(user);
+        if (offline) {
             auto vtable = *reinterpret_cast<void* const* const*>(batch);
             game::OnlineValueHandle value = reinterpret_cast<game::OnlineValueHandle (*)(void*)>(vtable[2])(batch);
             if (value.value) {
@@ -260,7 +292,31 @@ HOOK_DEFINE_TRAMPOLINE(InventoryPost) {
                 RefreshKryptWallet();
             }
         }
-        return Orig(batch, user, endpoint, done);
+        s_AnswerBatchPost = offline;
+        game::HydraHandle reply = Orig(batch, user, endpoint, done);
+        s_AnswerBatchPost = false;
+        return reply;
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(HydraPost) {
+    static game::HydraHandle Callback(const void* userHandle, const game::NRSString* endpoint, const game::OnlineValueHandle* body,
+                                      const void* done, bool flag) {
+        if (!s_AnswerBatchPost) return Orig(userHandle, endpoint, body, done, flag);
+        s_AnswerBatchPost = false;
+        char* bodyText = nullptr;
+        if (body && body->value) {
+            game::NRSString text = game::ToJsonString(body->value);
+            bodyText = strdup(text.c_str());
+        }
+        char* replyText = BatchReply(bodyText ? bodyText : "{}");
+        free(bodyText);
+        game::HydraHandle reply;
+        hydra::CompletedReply(&reply, replyText);
+        Log("inventory post %s answered: %.300s", endpoint->c_str(), replyText);
+        free(replyText);
+        hydra::InvokeCompletion(done, &reply);
+        return reply;
     }
 };
 
@@ -312,6 +368,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     system_dialogs::Install();
     portals::Install();
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
+    HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);
     KryptCleanup::InstallAtOffset(off::MK11Krypt_CleanupKryptCommon);
     KryptDestroy::InstallAtOffset(off::MK11Krypt_Dtor);
 

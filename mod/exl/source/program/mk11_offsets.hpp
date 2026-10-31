@@ -97,4 +97,7 @@ namespace mk11::off {
     constexpr ptrdiff_t FGOnlineInventoryBatch_Post = 0x204257c; // FGOnlineInventoryBatch::Post(FGUserEntity&, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, NRS::Function<void (HydraHandle<OnlineHydraSSC>, OnlineError const&, OnlineValueHandle const&)>)
     constexpr ptrdiff_t MK11Krypt_Dtor = 0x212a6f8; // MK11Krypt::~MK11Krypt()
     constexpr ptrdiff_t MK11Krypt_CleanupKryptCommon = 0x213256c; // MK11Krypt::CleanupKryptCommon()
+    constexpr ptrdiff_t OnlineHydraSSC_Post = 0x1a315a8; // OnlineHydraSSC::Post(NRS::NRSUserHandle, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, OnlineValueHandle const&, NRS::Function<void (HydraHandle<OnlineHydraSSC>, OnlineError const&, OnlineValueHandle const&)> const&, bool)
+    constexpr ptrdiff_t OnlineError_Ctor = 0x12c128c; // OnlineError::OnlineError(unsigned int, char const*, ...)
+    constexpr ptrdiff_t OnlineError_Dtor = 0x12bf088;
 }
