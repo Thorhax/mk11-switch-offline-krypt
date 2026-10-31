@@ -34,6 +34,11 @@ namespace {
         s32 num;
     };
 
+    // Records changed by update requests are handed to the game later, when the tower menu is opened
+    // again: replacing a record inside the request (e.g. while a tower is being completed) frees the
+    // PortalGOSData the active portal still points to.
+    bool s_RecordsStale = false;
+
     void* ActiveUser() { return game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1); }
 
     bool Offline(void* user) {
@@ -82,8 +87,15 @@ namespace {
         return record;
     }
 
-    // Makes sure the Klassic Towers record exists: from the SD card, or generated the first time.
+    // Makes sure the Klassic Towers record exists and is current: from the SD card, or generated the
+    // first time.
     bool EnsureKlassicRecord(void* user) {
+        if (s_RecordsStale) {
+            char key[128];
+            StoreKey(key, sizeof(key), KlassicName);
+            if (const char* stored = store::Get(key)) Log("portals: %s record refreshed: %s", KlassicName, Inject(user, stored) ? "ok" : "failed");
+            s_RecordsStale = false;
+        }
         if (FindRecord(user, KlassicName)) return true;
         char* record = GenerateKlassicRecord(user);
         if (!record) {
@@ -140,14 +152,14 @@ namespace {
         }
     }
 
-    // Saves the record, hands it to the game and returns it as the reply. `rewardsUserData` (the
+    // Saves the record and returns it as the reply. `rewardsUserData` (the
     // granted batch's user_data, if any) is added as "rewards" in the format the unlock pop-ups read.
     void Commit(void* user, json::Value* record, const char* key, game::HydraHandle* reply, const char* rewardsUserData = nullptr) {
         char* text = json::Serialize(record);
         if (!text) return;
         store::Put(key, text);
         store::Flush();
-        Inject(user, text);
+        s_RecordsStale = true;
         if (rewardsUserData) {
             size_t n = strlen(text) + strlen(rewardsUserData) + 64;
             char* withRewards = static_cast<char*>(game::Malloc(n));
@@ -270,8 +282,10 @@ HOOK_DEFINE_TRAMPOLINE(PortalUpdate) {
     }
 };
 
+// Unlike UpdatePortal, UpdatePortalEvent returns the request's OnlineHydra object id (the caller looks
+// it up with OnlineHydra::GetObjectById and keeps it as the event's completion request).
 HOOK_DEFINE_TRAMPOLINE(PortalEventUpdate) {
-    static game::HydraHandle Callback(void* user, const game::NRSString* a, const game::NRSString* b, const game::NRSString* c,
+    static u64 Callback(void* user, const game::NRSString* a, const game::NRSString* b, const game::NRSString* c,
                                       u64 version, s32 stage, const game::NRSString* eventName, s32 eventIndex,
                                       HandleArray* commands, const game::OnlineValueHandle* extra) {
         if (!Offline(user)) return Orig(user, a, b, c, version, stage, eventName, eventIndex, commands, extra);
@@ -284,18 +298,19 @@ HOOK_DEFINE_TRAMPOLINE(PortalEventUpdate) {
         json::Value* record = LoadRecord(names, 3, key, sizeof(key));
         if (!record) {
             hydra::CompletedReply(&reply, nullptr);
-            return reply;
+            return hydra::ObjectId(reply.value);
         }
         ApplyCommands(record, *commands);
         char* extraText = ValueJson(extra ? extra->value : nullptr);
         Log("portals: event extra data %s", extraText ? "read" : "none");
         char* rewards = extraText ? GrantUnlocks(extraText) : nullptr;
         Commit(user, record, key, &reply, rewards);
-        Log("portals: UpdatePortalEvent answered");
         game::Free(rewards);
         game::Free(extraText);
         json::Destroy(record);
-        return reply;
+        // The reply's reference is kept (HydraHandle does not release it), so the id stays valid.
+        Log("portals: UpdatePortalEvent answered (request id %#llx)", (unsigned long long)hydra::ObjectId(reply.value));
+        return hydra::ObjectId(reply.value);
     }
 };
 

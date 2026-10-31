@@ -7,6 +7,8 @@ namespace mk11::hydra {
     // A completed, successful OnlineHydraSSC whose response is the parsed `responseJson` ("{}" when
     // null). Nothing ever sends it. `out` stays empty when it cannot be built.
     void CompletedReply(game::HydraHandle* out, const char* responseJson);
+    // The id OnlineHydra registered the reply under (OnlineHydra::GetObjectById finds it while it lives).
+    u64 ObjectId(const void* ssc);
     // The reply's response value (the OnlineValueHandle a completion callback receives).
     const game::OnlineValueHandle* Response(const void* ssc);
     // Calls an NRS::Function<void (HydraHandle<OnlineHydraSSC>, OnlineError const&, OnlineValueHandle const&)>

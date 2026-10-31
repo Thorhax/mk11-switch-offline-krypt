@@ -13,6 +13,7 @@ namespace mk11::hydra {
         constexpr s32 SscStateComplete = 3;
         constexpr int SscSize = 0x108;
         constexpr ptrdiff_t SscRefCountOffset = 8;
+        constexpr ptrdiff_t SscObjectIdOffset = 48;  // OnlineHydra::RegisterObject's result
     }
 
     void CompletedReply(game::HydraHandle* out, const char* responseJson) {
@@ -37,6 +38,10 @@ namespace mk11::hydra {
         }
         *reinterpret_cast<s32*>(ssc + SscErrorCodeOffset) = 0;
         *reinterpret_cast<s32*>(ssc + SscStateOffset) = SscStateComplete;
+    }
+
+    u64 ObjectId(const void* ssc) {
+        return ssc ? *reinterpret_cast<const u64*>(static_cast<const u8*>(ssc) + SscObjectIdOffset) : 0;
     }
 
     const game::OnlineValueHandle* Response(const void* ssc) {
