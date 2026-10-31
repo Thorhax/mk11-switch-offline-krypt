@@ -64,6 +64,9 @@ AttributeDefinitionInstanceArray_Dtor = TArray<FAttributeDefinitionInstance, 8u,
 # GOT slot holding the MK11ExperienceManager instance
 Got_ExperienceManager = 0xabb64a0
 InventoryManager_FindItemDefinition = InventoryManager::FindItemDefinition(FItemDefinitionHandle)
+# FindItemDefinition returns any FItemObject with that GUID; the vtable tells definitions from sequences.
+Vtable_FItemDefinition = vtable for FItemDefinition
+Vtable_FItemSequenceDefinition = vtable for FItemSequenceDefinition
 InventoryManager_AddItem = InventoryManager::AddItem(FGUserEntity*, GearItem const&, BILootDropSourceData const&, EquipmentRefType*)
 GearItem_Ctor = GearItem::GearItem(FItemDefinitionHandle, int)
 FGUserEntityHandle_Ctor = FGUserEntityHandle::FGUserEntityHandle()

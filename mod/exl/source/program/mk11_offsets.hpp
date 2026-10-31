@@ -60,6 +60,8 @@ namespace mk11::off {
     constexpr ptrdiff_t AttributeDefinitionInstanceArray_Dtor = 0x31a6b4; // TArray<FAttributeDefinitionInstance, 8u, NRS::DefaultContainerAllocator>::~TArray()
     constexpr ptrdiff_t Got_ExperienceManager = 0xabb64a0;
     constexpr ptrdiff_t InventoryManager_FindItemDefinition = 0x21b2568; // InventoryManager::FindItemDefinition(FItemDefinitionHandle)
+    constexpr ptrdiff_t Vtable_FItemDefinition = 0xa667d50; // vtable for FItemDefinition
+    constexpr ptrdiff_t Vtable_FItemSequenceDefinition = 0xa667d78; // vtable for FItemSequenceDefinition
     constexpr ptrdiff_t InventoryManager_AddItem = 0x21b25cc; // InventoryManager::AddItem(FGUserEntity*, GearItem const&, BILootDropSourceData const&, EquipmentRefType*)
     constexpr ptrdiff_t GearItem_Ctor = 0x22b36d4; // GearItem::GearItem(FItemDefinitionHandle, int)
     constexpr ptrdiff_t FGUserEntityHandle_Ctor = 0x20179ec; // FGUserEntityHandle::FGUserEntityHandle()

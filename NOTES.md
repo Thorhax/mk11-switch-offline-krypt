@@ -14,7 +14,8 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Reward pop-ups after chests and vases, no "error contacting server" kick | Works in v0.3 (user-tested): each save returns a completed server reply |
 | Chest costs deducted | Works |
 | Chest unlockables (concept art etc.) granted | Works (local profile unlock bits) |
-| Gear rewards from chests | Fixed in v0.2 (on via `apply_gear_rewards=1`), not yet seen from a real chest (the chests opened so far rolled Koins, Hearts, materials and Konsumables) |
+| Gear rewards from chests | v0.3: chests award item sequences, now resolved to their first item (the first gear chest froze the game in v0.2/early v0.3); sequence grant tested via give.txt, awaiting a real gear chest |
+| Forge | Works (user-tested): materials spent, result added |
 | Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize |
 | Time Krystals | Never touched |
 | Online modes | Unchanged: the patches only affect the Krypt entry path |
@@ -101,6 +102,11 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
 `AddItem` ignores its `BILootDropSourceData` argument. It calls `InventoryData::InternalAddItem` →
 `RequestOnlineInventoryAddItem`, which applies the item locally (`OnUpdateItem`) and also queues an
 `add_game_item` for Hydra. The game saves the item to its profile save on its own.
+
+Krypt chests award *item sequences* (`FItemSequenceDefinition`: a gear piece with its upgrade states),
+not item definitions. `FindItemDefinition` returns any `FItemObject` with the GUID, so `gear::Add` tells
+them apart by vtable and grants a sequence's first state (+40 state array, +48 count), as the unlock
+pop-up does. Passing a sequence to `GearItem`/`AddItem` hung the game.
 
 The v0.1 crash was in the cleanup: it called `MKItem::~MKItem` on the `GearItem`. The game tears
 `GearItem` down field by field (`DestroyGearItem`).

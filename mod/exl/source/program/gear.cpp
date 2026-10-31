@@ -41,6 +41,19 @@ namespace mk11::gear {
             return out->lo || out->hi;
         }
 
+        // FItemSequenceDefinition: +40 its FItemSequenceState array (each starts with the state's
+        // FItemDefinitionHandle), +48 the state count.
+        constexpr ptrdiff_t SequenceStatesOffset = 40;
+        constexpr ptrdiff_t SequenceStateCountOffset = 48;
+
+        const void* FindObject(const DefinitionHandle& h) {
+            return game::Fn<const void* (*)(u64, u64)>(off::InventoryManager_FindItemDefinition)(h.lo, h.hi);
+        }
+
+        bool IsA(const void* object, ptrdiff_t vtableSymbol) {
+            return *static_cast<const uintptr_t*>(object) == exl::util::modules::GetTargetStart() + vtableSymbol + 0x10;
+        }
+
         // The level new gear gets: the owning character's experience level, as the game does.
         int CharacterLevel(void* user, const void* def) {
             u64 character = game::Fn<u64 (*)(const void*)>(off::ItemDefinition_GetCharacterKey)(def);
@@ -68,8 +81,21 @@ namespace mk11::gear {
             Log("gear: %s: unknown item", id);
             return false;
         }
-        const void* def = game::Fn<const void* (*)(u64, u64)>(off::InventoryManager_FindItemDefinition)(handle.lo, handle.hi);
-        if (!def) {
+        const void* def = FindObject(handle);
+        if (def && IsA(def, off::Vtable_FItemSequenceDefinition)) {
+            // Krypt chests award an item sequence (a gear piece with its upgrade states); like the
+            // server and the unlock pop-up, grant the sequence's first state.
+            s32 states = *reinterpret_cast<const s32*>(static_cast<const u8*>(def) + SequenceStateCountOffset);
+            auto first = *reinterpret_cast<const DefinitionHandle* const*>(static_cast<const u8*>(def) + SequenceStatesOffset);
+            if (states < 1 || !first) {
+                Log("gear: %s: item sequence without states", id);
+                return false;
+            }
+            handle = *first;
+            def = FindObject(handle);
+            Log("gear: %s is an item sequence, granting its first item", id);
+        }
+        if (!def || !IsA(def, off::Vtable_FItemDefinition)) {
             Log("gear: %s: no item definition", id);
             return false;
         }
