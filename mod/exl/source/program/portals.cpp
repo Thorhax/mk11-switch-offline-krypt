@@ -170,6 +170,7 @@ namespace {
     // Makes sure the Klassic Towers record exists and is current: from the SD card, or generated the
     // first time.
     bool EnsureKlassicRecord(void* user) {
+        store::Batch storeBatch;
         if (s_RecordsStale) {
             char key[128];
             StoreKey(key, sizeof(key), KlassicName);
@@ -368,11 +369,33 @@ namespace {
 
     // Makes sure every current calendar tower has a record (from the SD card, or generated) whose end
     // time is the tower's end.
+    // Removes stored Towers of Time records whose tower has ended (Klassic Towers never ends).
+    void RemoveExpiredRecords(const char* now) {
+        struct Context { const char* now; int removed; } context{ now, 0 };
+        store::ForEach("portal/", [](const char* key, const char* json, void* raw) {
+            auto context = static_cast<Context*>(raw);
+            if (!strcmp(key, "portal/KlassicTowers")) return;
+            json::Value* record = json::Parse(json);
+            const char* end = json::String(json::Find(record, "data.endTime"));
+            // ISO times compare as text ("2021-09-30T03:00:00+0000"); the stored value has no quotes
+            if (end && strncmp(end, context->now + 1, 24) < 0) {
+                store::Remove(key);
+                context->removed++;
+            }
+            json::Destroy(record);
+        }, &context);
+        if (context.removed) Log("portals: %d expired Towers of Time record(s) removed", context.removed);
+    }
+
     void EnsureCalendarRecords(void* user) {
+        store::Batch storeBatch;
         u8* requestTime = game::Fn<u8* (*)(void*)>(off::FGUserEntity_GetLastPortalRequestTime)(user);
         DateTimeValue now = game::Fn<DateTimeValue (*)()>(off::DateTime_CurrentGameTime)();
         memcpy(requestTime, now.bytes, DateTimeSize);
         Log("portals: Towers of Time date set to now (year %d)", game::Fn<s32 (*)(const void*)>(off::DateTime_GetYear)(requestTime));
+        char nowText[64];
+        FormatDateTime(now.bytes, nowText, sizeof(nowText));
+        RemoveExpiredRecords(nowText);
 
         alignas(16) u8 info[0x20] = {};
         game::Fn<void (*)(const void*, void*)>(off::MK11PortalInfo_GetCalendarPortalInfos)(requestTime, info);
@@ -496,6 +519,7 @@ HOOK_DEFINE_TRAMPOLINE(PortalUpdate) {
     static game::HydraHandle Callback(void* user, const game::NRSString* a, const game::NRSString* b, const game::NRSString* c,
                                       u64 version, HandleArray* commands, const game::OnlineValueHandle* data) {
         if (!Offline(user)) return Orig(user, a, b, c, version, commands, data);
+        store::Batch storeBatch;
         RecordRequest("UpdatePortal", a->c_str(), b->c_str(), c->c_str(), version, *commands, data ? data->value : nullptr);
         game::HydraHandle reply;
         const char* names[] = { b->c_str(), a->c_str(), c->c_str() };
@@ -521,6 +545,7 @@ HOOK_DEFINE_TRAMPOLINE(PortalEventUpdate) {
                                       u64 version, s32 stage, const game::NRSString* eventName, s32 eventIndex,
                                       HandleArray* commands, const game::OnlineValueHandle* extra) {
         if (!Offline(user)) return Orig(user, a, b, c, version, stage, eventName, eventIndex, commands, extra);
+        store::Batch storeBatch;
         RecordRequest("UpdatePortalEvent", a->c_str(), b->c_str(), eventName->c_str(), version, *commands,
                       extra ? extra->value : nullptr);
         Log("portals: UpdatePortalEvent %s / %s stage %d event %d (%s)", a->c_str(), b->c_str(), stage, eventIndex, eventName->c_str());

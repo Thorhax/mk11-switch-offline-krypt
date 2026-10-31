@@ -25,8 +25,8 @@
 //    lives on the SD card, instead of being sent to Hydra.
 //  Rewards: the inventory batch each save would have posted to Hydra is applied on the console
 //    (batch_apply) and also kept in inventory_batches.jsonl.
-//  Wallet: MK11 keeps no offline balance for Koins, Souls and Hearts (their offline stat id is
-//    unused), so while there is no Hydra connection their ExperienceView value lives in
+//  Wallet: MK11 keeps no offline balance for Koins, Souls, Hearts or player/character/gear XP (their
+//    offline profile stats stay 0), so while there is no Hydra connection their ExperienceView value lives in
 //    krypt_store. Crafting materials and Konsumables (SpendableItemInventory) are kept only in
 //    the Hydra inventory, so offline their counts live in krypt_store as well. Time Krystals
 //    (Exp_PremiumCurrency) are never touched.
@@ -132,6 +132,7 @@ HOOK_DEFINE_REPLACE(KryptFeedWait) {
 HOOK_DEFINE_REPLACE(KryptSave) {
     // Returns HydraHandle<OnlineHydraSSC> through x8, like the original.
     static game::HydraHandle Callback(const game::PtrArray<game::KryptSaveData>* objects, void* batch, const void* done) {
+        store::Batch storeBatch;  // save objects, rewards and wallet: one write
         char key[256];
         for (s32 i = 0; i < objects->num; i++) {
             game::KryptSaveData* obj = objects->data[i];
@@ -254,22 +255,57 @@ HOOK_DEFINE_TRAMPOLINE(KryptDestroy) {
 namespace {
     bool s_AnswerBatchPost = false;
 
-    // {"rewards":{"items":[{"id","item_slug","count"}...]}} with the wallet totals of the Koins / Souls /
-    // Hearts the batch body changed.
-    char* BatchReply(const char* body) {
+    // The current value of an experience type (player XP, a character's XP...), or false when `slug` is
+    // not one. Offline the game keeps these in the profile stats (ExperienceView::GetExperience).
+    bool ExperienceValue(void* user, const char* slug, int* value) {
+        void* manager = *reinterpret_cast<void**>(exl::util::modules::GetTargetStart() + off::Got_ExperienceManager);
+        game::NRSString name(slug);
+        s32 type = game::Fn<s32 (*)(void*, const game::NRSString&)>(off::MK11ExperienceManager_GetExperienceType)(manager, name);
+        if (type < 0) return false;
+        void* experienceUser = game::Fn<void* (*)(void*)>(off::FGUserEntity_GetExperienceUser)(user);
+        void* view = experienceUser ? game::Fn<void* (*)(void*, s32)>(off::ExperienceUser_GetExperienceView)(experienceUser, type) : nullptr;
+        if (!view) return false;
+        *value = game::Fn<s32 (*)(const void*)>(off::ExperienceView_GetExperience)(view);
+        return true;
+    }
+
+    // {"rewards":{"items":[{"id","item_slug","count"}...]}} with the new totals the server would send:
+    // the wallet totals of the Koins / Souls / Hearts the batch changed (already applied), and for
+    // experience types (player, character and gear XP) the current value plus what the batch awards. The
+    // game commits these through ExperienceView::OnInventoryUpdated, which offline stores XP in the profile
+    // stats. Time Krystals are never included.
+    char* BatchReply(void* user, const char* body) {
         json::Value* root = json::Parse(body);
         json::Value* list = json::Find(root, "rewards.inc_consumable");
         if (!list) list = json::Find(root, "inc_consumable");
         size_t size = 64;
-        for (size_t i = 0; i < json::Count(list); i++) size += 96;
+        for (size_t i = 0; i < json::Count(list); i++) size += 128;
         char* out = static_cast<char*>(game::Malloc(size));
         int n = snprintf(out, size, "{\"rewards\":{\"items\":[");
         bool first = true;
         for (size_t i = 0; i < json::Count(list); i++) {
             const char* slug = json::String(json::Find(json::At(list, i), "item_slug"));
-            if (!slug || !wallet::Manages(slug) || strstr(out, slug)) continue;
-            n += snprintf(out + n, size - n, "%s{\"id\":\"offline-%s\",\"item_slug\":\"%s\",\"count\":%d}",
-                          first ? "" : ",", slug, slug, wallet::Get(slug));
+            if (!slug || !strcmp(slug, "Exp_PremiumCurrency")) continue;
+            char quoted[96];
+            snprintf(quoted, sizeof(quoted), "\"%s\"", slug);
+            if (strstr(out, quoted)) continue;  // already listed
+            int count;
+            if (wallet::Manages(slug)) {
+                count = wallet::Get(slug);
+            } else {
+                int current;
+                if (!ExperienceValue(user, slug, &current)) continue;
+                long long total = 0, amount;
+                for (size_t j = 0; j < json::Count(list); j++) {
+                    json::Value* entry = json::At(list, j);
+                    const char* other = json::String(json::Find(entry, "item_slug"));
+                    if (other && !strcmp(other, slug) && json::Integer(json::Find(entry, "inc_amount"), &amount)) total += amount;
+                }
+                count = current + (int)total;
+                Log("experience: %s %d + %lld = %d", slug, current, total, count);
+            }
+            n += snprintf(out + n, size - n, "%s{\"id\":\"offline-%s\",\"item_slug\":%s,\"count\":%d}",
+                          first ? "" : ",", slug, quoted, count);
             first = false;
         }
         snprintf(out + n, size - n, "]}}");
@@ -280,6 +316,7 @@ namespace {
 
 HOOK_DEFINE_TRAMPOLINE(InventoryPost) {
     static game::HydraHandle Callback(void* batch, void* user, const game::NRSString* endpoint, void* done) {
+        store::Batch storeBatch;  // the batch and the answered reply's wallet updates: one write
         bool offline = user && !game::Fn<bool (*)(void*)>(off::FGUserEntity_IsConnectedToHydra)(user);
         if (offline) {
             auto vtable = *reinterpret_cast<void* const* const*>(batch);
@@ -309,7 +346,8 @@ HOOK_DEFINE_TRAMPOLINE(HydraPost) {
             game::NRSString text = game::ToJsonString(body->value);
             bodyText = game::StrDup(text.c_str());
         }
-        char* replyText = BatchReply(bodyText ? bodyText : "{}");
+        void* user = game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1);
+        char* replyText = BatchReply(user, bodyText ? bodyText : "{}");
         game::Free(bodyText);
         game::HydraHandle reply;
         hydra::CompletedReply(&reply, replyText);
@@ -347,6 +385,7 @@ HOOK_DEFINE_TRAMPOLINE(KryptInitialize) {
     static void Callback(void* krypt) {
         Orig(krypt);
         s_Krypt = krypt;
+        store::Batch storeBatch;
         items::DumpIfMissing();
         void* user = game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1);
         gear::ApplyGiveList(user);

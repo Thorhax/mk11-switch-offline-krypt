@@ -150,3 +150,6 @@ DateTime_PlatformGetNetworkUTC = NRSDate::DateTime::PlatformGetNetworkUTC()
 DateTime_CurrentUserUTC = NRSDate::DateTime::CurrentUserUTC()
 MK11OnlinePortalObj_CreateEventsAndStages = MK11OnlinePortalObj::CreateEventsAndStages()
 MK11PortalObj_CreateEventsAndStages = MK11PortalObj::CreateEventsAndStages()
+MK11ExperienceManager_GetExperienceType = MK11ExperienceManager::GetExperienceType(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&) const
+ExperienceUser_GetExperienceView = ExperienceUser::GetExperienceView(EExperienceType) const
+FGUserEntity_GetExperienceUser = FGUserEntity::GetExperienceUser()

@@ -3,6 +3,7 @@
 #include "log.hpp"
 #include "nn/fs.hpp"
 #include <atomic>
+#include <cstdio>
 #include <cstring>
 
 namespace nn::fs {
@@ -29,6 +30,8 @@ namespace mk11::store {
         size_t s_Count = 0;
         bool s_Loaded = false;
         bool s_Dirty = false;
+        std::atomic<int> s_BatchDepth{0};
+        constexpr s64 LogRotateSize = 1 << 20;  // jsonl files are rotated to .old above 1 MB
 
         std::atomic_flag s_Lock = ATOMIC_FLAG_INIT;
         struct Guard {
@@ -128,6 +131,40 @@ namespace mk11::store {
         }
     }
 
+    void Remove(const char* key) {
+        Guard g;
+        EnsureLoaded();
+        // Open addressing: the key stays as a tombstone; entries without JSON are neither found by Get
+        // nor written.
+        if (Entry* e = Find(key, strlen(key), false); e && e->json) {
+            game::Free(e->json);
+            e->json = nullptr;
+            e->jsonLen = 0;
+            s_Dirty = true;
+        }
+    }
+
+    void ForEach(const char* prefix, void (*fn)(const char* key, const char* json, void* context), void* context) {
+        // Keys are collected first so `fn` may call Get/Put/Remove.
+        size_t n = strlen(prefix), count = 0;
+        char** keys;
+        {
+            Guard g;
+            EnsureLoaded();
+            keys = static_cast<char**>(game::Malloc(sizeof(char*) * (s_Count + 1)));
+            for (auto& e : s_Table)
+                if (e.key && e.json && e.keyLen >= n && memcmp(e.key, prefix, n) == 0) keys[count++] = e.key;
+        }
+        for (size_t i = 0; i < count; i++)
+            if (const char* json = Get(keys[i])) fn(keys[i], json, context);
+        game::Free(keys);
+    }
+
+    Batch::Batch() { s_BatchDepth++; }
+    Batch::~Batch() {
+        if (--s_BatchDepth == 0) Flush();
+    }
+
     size_t Count() {
         Guard g;
         EnsureLoaded();
@@ -148,6 +185,21 @@ namespace mk11::store {
 
         Guard g;
         nn::fs::SetEnabledAutoAbort(false);
+        // Keep the file small: above LogRotateSize it becomes <file>.old (replacing the previous one).
+        {
+            nn::fs::FileHandle sizeHandle;
+            s64 current = 0;
+            if (R_SUCCEEDED(nn::fs::OpenFile(&sizeHandle, Path, nn::fs::OpenMode_Read))) {
+                nn::fs::GetFileSize(&current, sizeHandle);
+                nn::fs::CloseFile(sizeHandle);
+            }
+            if (current > LogRotateSize) {
+                char old[140];
+                snprintf(old, sizeof(old), "%s.old", path);
+                nn::fs::DeleteFile(old);
+                nn::fs::RenameFile(Path, old);
+            }
+        }
         nn::fs::CreateFile(Path, 0);
         nn::fs::FileHandle h;
         if (R_SUCCEEDED(nn::fs::OpenFile(&h, Path, nn::fs::OpenMode_Write | nn::fs::OpenMode_Append))) {
@@ -180,6 +232,7 @@ namespace mk11::store {
     }
 
     void Flush() {
+        if (s_BatchDepth > 0) return;  // written when the outermost Batch ends
         Guard g;
         if (!s_Dirty || !MountSd()) return;
 

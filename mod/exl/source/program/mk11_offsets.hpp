@@ -126,4 +126,7 @@ namespace mk11::off {
     constexpr ptrdiff_t DateTime_CurrentUserUTC = 0x1d1b840; // NRSDate::DateTime::CurrentUserUTC()
     constexpr ptrdiff_t MK11OnlinePortalObj_CreateEventsAndStages = 0x21a8e04; // MK11OnlinePortalObj::CreateEventsAndStages()
     constexpr ptrdiff_t MK11PortalObj_CreateEventsAndStages = 0x21a3d78; // MK11PortalObj::CreateEventsAndStages()
+    constexpr ptrdiff_t MK11ExperienceManager_GetExperienceType = 0x2532f04; // MK11ExperienceManager::GetExperienceType(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&) const
+    constexpr ptrdiff_t ExperienceUser_GetExperienceView = 0x2532524; // ExperienceUser::GetExperienceView(EExperienceType) const
+    constexpr ptrdiff_t FGUserEntity_GetExperienceUser = 0x265d7e0; // FGUserEntity::GetExperienceUser()
 }

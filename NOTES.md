@@ -10,6 +10,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Entering the Krypt offline | Works |
 | Krypt progress (chests opened, map, intro, unlocked areas) saved and restored | Works, survives game restarts |
 | Koins / Souls / Hearts balances offline | Works (on-console wallet) |
+| Player, character and gear XP | Works (on-console wallet, every `Exp_` value but Time Krystals; tested: player level 1 -> 2) |
 | Crafting materials and Konsumables from chests | Works in v0.3 (on-console wallet; shown under Inventory → Forge Items) |
 | Reward pop-ups after chests and vases, no "error contacting server" kick | Works in v0.3 (user-tested): each save returns a completed server reply |
 | Chest costs deducted | Works |
@@ -39,11 +40,13 @@ Release copies: `mod/releases/v0.5-towers-of-time/` (current), `mod/releases/v0.
 
 ## Files the module writes on the SD card (`sdmc:/mk11offline/`)
 
-- `krypt.dat`: the Krypt progress plus the wallet, one `key<TAB>json` line each. Readable and editable.
+- `krypt.dat`: the Krypt progress, tower records (`portal/<name>`) and the wallet, one `key<TAB>json` line
+  each. Readable and editable. It is written once per reward batch / save (store::Batch), not per value.
   `krypt.bak` is the previous version. The wallet lines are `wallet/Exp_Koins`, `wallet/Exp_SoulFragments`,
   `wallet/Exp_BrutalityHearts`, and one `wallet/<item>` line per crafting material or Konsumable
   (e.g. `wallet/CopperPlating`).
-- `inventory_batches.jsonl`: every reward batch the Krypt would have sent to the server, one per line.
+- `inventory_batches.jsonl`, `portal_requests.jsonl`: every reward batch / tower request, one per line;
+  rotated to `.old` above 1 MB.
 - `log.txt`: the module's log for the current run.
 - `replay_batch.json` (if you create it): applied once at the next Krypt save, then deleted.
 - `items.txt`: every item definition the game has loaded (31,106): GUID, internal name, character,
@@ -121,7 +124,8 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
 - Towers of Time: calendar towers come from `GetCalendarPortalInfos(lastPortalRequestTime)`; offline that
   date is set to now and missing records are generated with `TimedPortalObj`, whose online
   `CreateEventsAndStages` is routed to the base one (`<name>_PortalInit` in PortalDefinitions.mko) while
-  generating. The record's `endTime` is set from the tower's definition. The game clock (`time()`) reads 1970
+  generating. The record's `endTime` is set from the tower's definition; records of ended towers are
+  removed when Towers of Time opens. The game clock (`time()`) reads 1970
   offline, so `PlatformGetNetworkUTC` falls back to the console user clock.
 - Credits: the two credits movies in `BasicLadder_PlayLadderEnding` are skipped by making `Movie_Play` report
   failure for those call sites.
