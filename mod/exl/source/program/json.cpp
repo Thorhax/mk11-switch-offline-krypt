@@ -149,6 +149,7 @@ namespace mk11::json {
 
         // The child named by one path segment; with `create`, a missing object key is added as null.
         Value* Child(Value* v, const char* seg, size_t len, bool create) {
+            if (create && v->type == Type::Null) v->type = Type::Object;
             if (v->type == Type::Object) {
                 for (size_t i = 0; i < v->count; i++)
                     if (strlen(v->keys[i]) == len && !strncmp(v->keys[i], seg, len)) return v->items[i];
@@ -253,6 +254,10 @@ namespace mk11::json {
     Value* Find(Value* root, const char* path) { return Walk(root, path, false); }
 
     const char* String(const Value* v) { return v && v->type == Type::String ? v->text : nullptr; }
+
+    size_t Members(const Value* v) { return v && v->type == Type::Object ? v->count : 0; }
+    const char* KeyAt(const Value* v, size_t i) { return i < Members(v) ? v->keys[i] : nullptr; }
+    Value* MemberAt(const Value* v, size_t i) { return i < Members(v) ? v->items[i] : nullptr; }
 
     size_t Count(const Value* v) { return v && v->type == Type::Array ? v->count : 0; }
     Value* At(const Value* v, size_t i) { return i < Count(v) ? v->items[i] : nullptr; }

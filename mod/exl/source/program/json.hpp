@@ -13,7 +13,8 @@ namespace mk11::json {
     Value* Parse(const char* text);
     void Destroy(Value* v);
 
-    // Replaces the value at the dot path with a copy of `value`, creating missing object keys.
+    // Replaces the value at the dot path with a copy of `value`, creating missing object keys (a null
+    // on the way becomes an object).
     // Returns false when the path runs through a non-container or an out-of-range array index.
     bool Set(Value* root, const char* path, const Value* value);
 
@@ -29,6 +30,11 @@ namespace mk11::json {
     // Array elements: the count (0 unless `v` is an array) and the element at `i`.
     size_t Count(const Value* v);
     Value* At(const Value* v, size_t i);
+
+    // Object members: the count (0 unless `v` is an object), and the key / value at `i`.
+    size_t Members(const Value* v);
+    const char* KeyAt(const Value* v, size_t i);
+    Value* MemberAt(const Value* v, size_t i);
 
     // Compact JSON text; free with std::free.
     char* Serialize(const Value* v);

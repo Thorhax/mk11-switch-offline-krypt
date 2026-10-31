@@ -52,13 +52,93 @@ namespace {
         return game::Fn<const void* (*)(void*, const game::NRSString&)>(off::MK11PortalInfo_GetPortalGOSData)(user, key);
     }
 
-    // Hands a stored record to the game the way the Hydra portal callbacks do.
-    bool Inject(void* user, const char* record) {
-        game::NRSString text(record);
-        game::OnlineValueHandle value = game::ParseFromJson(text);
+    bool InjectValue(void* user, const char* text) {
+        game::NRSString json(text);
+        game::OnlineValueHandle value = game::ParseFromJson(json);
         if (!value.value) return false;
         game::Fn<void (*)(void*, const game::OnlineValueHandle&)>(off::UpdatePortalGOSObject)(user, value);
         return true;
+    }
+
+    // Hands a stored record to the game the way the Hydra portal callbacks do. The best score of each
+    // completed tower is kept in the record as offline.persistent.<key> = {score, completionRank}; the game
+    // shows it from its persistent event objects ("P<portal>_<stage>_<event>"), which UpdatePortalGOSObject
+    // takes from "persistentData", one per call, so the record is handed over once per entry.
+    // Fills offline.persistent from the scores the events already store (data.stages.N.events.M.data.score),
+    // for records completed before best scores were kept.
+    void BackfillBestScores(json::Value* root) {
+        json::Value* stages = json::Find(root, "data.stages");
+        const char* ids[] = { json::String(json::Find(root, "id")), json::String(json::Find(root, "data.name")) };
+        for (size_t st = 0; st < json::Count(stages); st++) {
+            json::Value* events = json::Find(json::At(stages, st), "events");
+            for (size_t ev = 0; ev < json::Count(events); ev++) {
+                json::Value* event = json::At(events, ev);
+                const char* name = json::String(json::Find(event, "name"));
+                long long score;
+                if (!name || !json::Integer(json::Find(event, "data.score"), &score) || score <= 0) continue;
+                for (const char* id : ids) {
+                    if (!id || !*id) continue;
+                    char path[300];
+                    snprintf(path, sizeof(path), "offline.persistent.P%s_%d_%s.score", id, (int)st, name);
+                    long long best;
+                    if (!json::Integer(json::Find(root, path), &best) || best < score) json::SetInteger(root, path, score);
+                }
+            }
+        }
+    }
+
+    bool Inject(void* user, const char* record) {
+        json::Value* root = json::Parse(record);
+        if (root) BackfillBestScores(root);
+        json::Value* persistent = json::Find(root, "offline.persistent");
+        size_t count = json::Members(persistent);
+        if (!root || !count) {
+            json::Destroy(root);
+            return InjectValue(user, record);
+        }
+        bool ok = true;
+        for (size_t i = 0; i < count; i++) {
+            const char* key = json::KeyAt(persistent, i);
+            char* data = json::Serialize(json::MemberAt(persistent, i));
+            size_t n = strlen(key) * 2 + (data ? strlen(data) : 2) + 64;
+            char* text = static_cast<char*>(game::Malloc(n));
+            snprintf(text, n, "{\"id\":\"offline-%s\",\"unique_key\":\"%s\",\"data\":%s}", key, key, data ? data : "{}");
+            json::Value* object = json::Parse(text);
+            if (object) json::Set(root, "persistentData", object);
+            json::Destroy(object);
+            game::Free(text);
+            game::Free(data);
+            char* full = json::Serialize(root);
+            ok = full && InjectValue(user, full) && ok;
+            game::Free(full);
+        }
+        json::Destroy(root);
+        return ok;
+    }
+
+    // Keeps the best score of a completed tower event (extraData: score, completionRank) in the record,
+    // under both forms of the game's key (portal id or name).
+    void RecordBestScore(json::Value* record, const char* portalId, s32 stage, const char* eventName, const char* extraText) {
+        json::Value* extra = json::Parse(extraText);
+        long long score, rank = 0;
+        if (json::Integer(json::Find(extra, "score"), &score)) {
+            json::Integer(json::Find(extra, "completionRank"), &rank);
+            const char* ids[] = { portalId, json::String(json::Find(record, "data.name")) };
+            for (const char* id : ids) {
+                if (!id || !*id) continue;
+                char path[256];
+                snprintf(path, sizeof(path), "offline.persistent.P%s_%d_%s", id, stage, eventName);
+                char scorePath[300], rankPath[300];
+                snprintf(scorePath, sizeof(scorePath), "%s.score", path);
+                snprintf(rankPath, sizeof(rankPath), "%s.completionRank", path);
+                long long best = 0;
+                if (json::Integer(json::Find(record, scorePath), &best) && best >= score) continue;
+                json::SetInteger(record, scorePath, score);
+                json::SetInteger(record, rankPath, rank);
+                Log("portals: best score %s = %lld (rank %lld)", path + 19, score, rank);
+            }
+        }
+        json::Destroy(extra);
     }
 
     char* ValueJson(const void* value) {
@@ -303,6 +383,7 @@ HOOK_DEFINE_TRAMPOLINE(PortalEventUpdate) {
         ApplyCommands(record, *commands);
         char* extraText = ValueJson(extra ? extra->value : nullptr);
         Log("portals: event extra data %s", extraText ? "read" : "none");
+        if (extraText) RecordBestScore(record, b->c_str(), stage, eventName->c_str(), extraText);
         char* rewards = extraText ? GrantUnlocks(extraText) : nullptr;
         Commit(user, record, key, &reply, rewards);
         game::Free(rewards);
