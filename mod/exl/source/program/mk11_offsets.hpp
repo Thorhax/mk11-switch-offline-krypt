@@ -25,6 +25,10 @@ namespace mk11::off {
     constexpr ptrdiff_t MKOnline_IsUserSignedIn = 0x25e7b88; // MKOnline_IsUserSignedIn(FGUserEntity*, bool, bool*)
     constexpr ptrdiff_t VM_CallScriptFunction_bool = 0x280e18c; // bool MKS::VM::CallScriptFunction<bool>(MKS::ScriptObj*, unsigned int, unsigned int, ...)
     constexpr ptrdiff_t GoingToKrypt_IsRestrictedCall = 0x5b0e248;
+    constexpr ptrdiff_t KustomizeSyncPromptCall = 0x5b125c4;
+    constexpr ptrdiff_t KustomizeDlcSyncPromptCall = 0x5b126dc;
+    constexpr ptrdiff_t FightingSyncPromptCall = 0x5b121ac;
+    constexpr ptrdiff_t EndpointsShowErrorCall = 0x1937890;
     constexpr ptrdiff_t KryptSaveRestore_Restore = 0x21695c8; // MK11KryptSaveRestore::RestoreKryptData(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, FKryptSaveDataBase&, FGUserEntity const&)
     constexpr ptrdiff_t GetKryptBackgroundName = 0x211caec; // GetKryptBackgroundName()
     constexpr ptrdiff_t OnlineValue_New = 0x1a1f280; // OnlineValue::operator new(unsigned long)

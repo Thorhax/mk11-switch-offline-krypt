@@ -23,6 +23,14 @@ MKOnline_IsUserSignedIn = MKOnline_IsUserSignedIn(FGUserEntity*, bool, bool*)
 VM_CallScriptFunction_bool = bool MKS::VM::CallScriptFunction<bool>(MKS::ScriptObj*, unsigned int, unsigned int, ...)
 # GoingToKrypt line 2956: IsRestrictedFromEnteringOnlineFeature script call
 GoingToKrypt_IsRestrictedCall = 0x5b0e248
+# "Unable to sync your online inventory" Yes/No boxes (ShowYesNoMsgBox calls) in the offline
+# inventory checks before Kustomize (sync and DLC sync) and before fights.
+KustomizeSyncPromptCall = 0x5b125c4
+KustomizeDlcSyncPromptCall = 0x5b126dc
+FightingSyncPromptCall = 0x5b121ac
+# OnlineSystemGetEndpoints::FiberExecute: nn::err::ShowError call that shows 2123-0011 at boot when
+# the endpoint lookup fails (the game then carries on offline either way).
+EndpointsShowErrorCall = 0x1937890
 # Stage 2: Krypt save data kept on the console
 KryptSaveRestore_Restore = MK11KryptSaveRestore::RestoreKryptData(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, FKryptSaveDataBase&, FGUserEntity const&)
 GetKryptBackgroundName = GetKryptBackgroundName()

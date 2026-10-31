@@ -18,7 +18,9 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Forge | Works (user-tested): materials spent, result added |
 | Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize |
 | Time Krystals | Never touched |
-| Online modes | Unchanged: the patches only affect the Krypt entry path |
+| Boot error 2123-0011 | Removed: the ShowError call in OnlineSystemGetEndpoints::FiberExecute is skipped |
+| "Unable to sync your online inventory" (Kustomize, fights) | Removed: the Yes/No boxes are answered Yes without being shown |
+| Online modes | Unchanged: the patches only affect the Krypt entry path and the offline prompts above |
 
 ## Install (already on the test console)
 
@@ -135,4 +137,5 @@ Item notes:
   partly copied. sys-botbase can't peek the game's code pages.
 - **Crashes:** Atmosphère writes no crash reports for MK11 on this console. Use the module log, and
   `crash.cpp`, which hasn't caught anything yet.
-- **Boot:** every boot shows error 2123-0011, which is harmless (Nintendo servers are blocked). Press OK.
+- **Boot:** 2123-0011 came from `nn::err::ShowError` in `OnlineSystemGetEndpoints::FiberExecute` (main+0x1937890) after the
+  endpoint lookup fails; the module skips that call. `system_dialogs.cpp` logs every SDK error dialog with its caller.

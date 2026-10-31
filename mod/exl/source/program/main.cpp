@@ -8,6 +8,7 @@
 #include "krypt_store.hpp"
 #include "log.hpp"
 #include "mk11_offsets.hpp"
+#include "system_dialogs.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -287,6 +288,14 @@ extern "C" void exl_main(void* x0, void* x1) {
     exl::patch::CodePatcher(off::GoingToKrypt_IsUserSignedInCall).Write<u32>(0x52800020);      // mov w0, #1
     // GoingToKrypt: inventory sync result -> 2 (synced).
     exl::patch::CodePatcher(off::GoingToKrypt_EnsureInventorySyncedCall).Write<u32>(0x52800040); // mov w0, #2
+
+    // Offline inventory prompts before Kustomize and fights: answer Yes (= continue offline, as the
+    // player always must) without showing the box. ShowYesNoMsgBox returns 1 for Yes.
+    for (ptrdiff_t call : { off::KustomizeSyncPromptCall, off::KustomizeDlcSyncPromptCall, off::FightingSyncPromptCall })
+        exl::patch::CodePatcher(call).Write<u32>(0x52800020);                                  // mov w0, #1
+    // Boot: skip the system error dialog (2123-0011) for the failed online endpoint lookup.
+    exl::patch::CodePatcher(off::EndpointsShowErrorCall).Write<u32>(0xd503201f);               // nop
+    system_dialogs::Install();
 
     KryptFeedWait::InstallAtOffset(off::KryptFeed_WaitForFinishWithCancel);
     KryptSave::InstallAtOffset(off::KryptSaveRestore_Save);
