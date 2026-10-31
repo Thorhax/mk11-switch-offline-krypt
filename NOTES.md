@@ -33,7 +33,7 @@ atmosphere/contents/0100F2200C984000/exefs/main.npdm  game npdm + svcs 0x40/0x43
 mk11offline/config.ini                                optional settings
 ```
 
-Release copies: `mod/releases/v0.3-materials/` (current), `mod/releases/v0.2-give-items/`, `mod/releases/v0.1-offline-krypt/`. To uninstall, delete the `exefs` folder.
+Release copies: `mod/releases/v0.4-towers/` (current), `mod/releases/v0.3-materials/`, `mod/releases/v0.2-give-items/`, `mod/releases/v0.1-offline-krypt/`. To uninstall, delete the `exefs` folder.
 
 ## Files the module writes on the SD card (`sdmc:/mk11offline/`)
 
