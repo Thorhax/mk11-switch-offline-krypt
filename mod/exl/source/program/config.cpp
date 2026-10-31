@@ -15,10 +15,12 @@ namespace mk11::config {
         bool s_Loaded = false;
         int s_TopUp = 0;
         bool s_ApplyGear = false;
+        bool s_SkipTowerCredits = true;
 
         void Apply(const char* key, const char* value) {
             if (strcmp(key, "krypt_currency_topup") == 0) s_TopUp = atoi(value);
             else if (strcmp(key, "apply_gear_rewards") == 0) s_ApplyGear = atoi(value) != 0;
+            else if (strcmp(key, "skip_tower_credits") == 0) s_SkipTowerCredits = atoi(value) != 0;
         }
 
         void Load() {
@@ -50,7 +52,7 @@ namespace mk11::config {
                 }
                 line = next;
             }
-            Log("config: krypt_currency_topup=%d apply_gear_rewards=%d", s_TopUp, s_ApplyGear);
+            Log("config: krypt_currency_topup=%d apply_gear_rewards=%d skip_tower_credits=%d", s_TopUp, s_ApplyGear, s_SkipTowerCredits);
         }
     }
 
@@ -62,5 +64,10 @@ namespace mk11::config {
     int KryptCurrencyTopUp() {
         if (!s_Loaded) Load();
         return s_TopUp;
+    }
+
+    bool SkipTowerCredits() {
+        if (!s_Loaded) Load();
+        return s_SkipTowerCredits;
     }
 }

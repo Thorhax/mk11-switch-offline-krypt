@@ -102,4 +102,22 @@ namespace mk11::off {
     constexpr ptrdiff_t OnlineHydraSSC_Post = 0x1a315a8; // OnlineHydraSSC::Post(NRS::NRSUserHandle, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, OnlineValueHandle const&, NRS::Function<void (HydraHandle<OnlineHydraSSC>, OnlineError const&, OnlineValueHandle const&)> const&, bool)
     constexpr ptrdiff_t OnlineError_Ctor = 0x12c128c; // OnlineError::OnlineError(unsigned int, char const*, ...)
     constexpr ptrdiff_t OnlineError_Dtor = 0x12bf088;
+    constexpr ptrdiff_t MoviePlayer_Movie_Play = 0x13440d8; // MoviePlayer::Movie_Play(char const*, SWITCH_BITS, SWITCH_BITS, void (*)(), EMKMoviePlayerIndex, unsigned int, unsigned int, GAMEPAD_INDEX, unsigned int)
+    constexpr ptrdiff_t LadderEnding_CreditsMovie1Return = 0x5afaeb0;
+    constexpr ptrdiff_t LadderEnding_CreditsMovie2Return = 0x5afb034;
+    constexpr ptrdiff_t MK11PortalInfo_CreateCalendarPortals = 0x2185ce8; // MK11PortalInfo::CreateCalendarPortals(FGUserEntity*, TIndirectArray<MK11PortalObj, 8u, NRS::DefaultContainerAllocator>&)
+    constexpr ptrdiff_t MK11PortalInfo_GetCalendarPortalInfos = 0x21848c4; // MK11PortalInfo::GetCalendarPortalInfos(NRSDate::DateTime const&, PortalEventInfo*)
+    constexpr ptrdiff_t PortalEventInfo_Sort = 0x1e32af0; // PortalEventInfo::Sort()
+    constexpr ptrdiff_t PortalEventInfo_GetNumOfPortals = 0x1e32d48; // PortalEventInfo::GetNumOfPortals() const
+    constexpr ptrdiff_t PortalEventInfo_GetPortal = 0x1e32d50; // PortalEventInfo::GetPortal(int)
+    constexpr ptrdiff_t PortalDefinitionArray_Dtor = 0x1e8e430; // TArray<PortalDefinition, 8u, NRS::DefaultContainerAllocator>::~TArray()
+    constexpr ptrdiff_t TimedPortalObj_Ctor = 0x21a9a04; // TimedPortalObj::TimedPortalObj(FGUserEntity*, PortalGOSData*)
+    constexpr ptrdiff_t TimedPortalObj_PortalObjInit = 0x21a9a34; // TimedPortalObj::PortalObjInit(char const*, PortalObjType, NRSDate::DateTime const*, NRSDate::DateTime const*)
+    constexpr ptrdiff_t FGUserEntity_GetLastPortalRequestTime = 0x265df90; // FGUserEntity::GetLastPortalRequestTime() const
+    constexpr ptrdiff_t DateTime_CurrentGameTime = 0x1d1b7bc; // NRSDate::DateTime::CurrentGameTime()
+    constexpr ptrdiff_t DateTime_GetYear = 0x1d1ae48; // NRSDate::DateTime::GetYear() const
+    constexpr ptrdiff_t GoingToPortals_WaitForFeedCall = 0x5b11cb0;
+    constexpr ptrdiff_t GoingToPortals_FeedSuccessfulCall = 0x5b11d1c;
+    constexpr ptrdiff_t GoingToPortals_IsConnectedCall = 0x5b11d2c;
+    constexpr ptrdiff_t GoingToPortals_FeedUpToDateCall = 0x5b11d38;
 }

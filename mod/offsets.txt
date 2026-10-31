@@ -120,3 +120,25 @@ OnlineHydraSSC_Post = OnlineHydraSSC::Post(NRS::NRSUserHandle, NRS::NRSBasicStri
 OnlineError_Ctor = OnlineError::OnlineError(unsigned int, char const*, ...)
 # OnlineError::~OnlineError() complete-object destructor (the other symbol of that name is the deleting one)
 OnlineError_Dtor = 0x12bf088
+MoviePlayer_Movie_Play = MoviePlayer::Movie_Play(char const*, SWITCH_BITS, SWITCH_BITS, void (*)(), EMKMoviePlayerIndex, unsigned int, unsigned int, GAMEPAD_INDEX, unsigned int)
+# MKS_Ladder::BasicLadder_PlayLadderEnding: return addresses of the two credits Movie_Play calls (after
+# MK11TrophySystem::CheckForWatchTheKreditsTrophy); a false result makes the script skip the movie.
+LadderEnding_CreditsMovie1Return = 0x5afaeb0
+LadderEnding_CreditsMovie2Return = 0x5afb034
+# Towers of Time (portals.cpp)
+MK11PortalInfo_CreateCalendarPortals = MK11PortalInfo::CreateCalendarPortals(FGUserEntity*, TIndirectArray<MK11PortalObj, 8u, NRS::DefaultContainerAllocator>&)
+MK11PortalInfo_GetCalendarPortalInfos = MK11PortalInfo::GetCalendarPortalInfos(NRSDate::DateTime const&, PortalEventInfo*)
+PortalEventInfo_Sort = PortalEventInfo::Sort()
+PortalEventInfo_GetNumOfPortals = PortalEventInfo::GetNumOfPortals() const
+PortalEventInfo_GetPortal = PortalEventInfo::GetPortal(int)
+PortalDefinitionArray_Dtor = TArray<PortalDefinition, 8u, NRS::DefaultContainerAllocator>::~TArray()
+TimedPortalObj_Ctor = TimedPortalObj::TimedPortalObj(FGUserEntity*, PortalGOSData*)
+TimedPortalObj_PortalObjInit = TimedPortalObj::PortalObjInit(char const*, PortalObjType, NRSDate::DateTime const*, NRSDate::DateTime const*)
+FGUserEntity_GetLastPortalRequestTime = FGUserEntity::GetLastPortalRequestTime() const
+DateTime_CurrentGameTime = NRSDate::DateTime::CurrentGameTime()
+DateTime_GetYear = NRSDate::DateTime::GetYear() const
+# GoingToPortalsHelper (Towers of Time menu): portal feed and connection checks
+GoingToPortals_WaitForFeedCall = 0x5b11cb0
+GoingToPortals_FeedSuccessfulCall = 0x5b11d1c
+GoingToPortals_IsConnectedCall = 0x5b11d2c
+GoingToPortals_FeedUpToDateCall = 0x5b11d38

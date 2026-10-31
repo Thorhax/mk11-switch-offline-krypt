@@ -320,6 +320,20 @@ HOOK_DEFINE_TRAMPOLINE(HydraPost) {
     }
 };
 
+// Towers: the studio credits play (unskippably) after every character ending. Their two Movie_Play calls
+// in the ladder ending script report "not started" instead, which skips them (config skip_tower_credits).
+HOOK_DEFINE_TRAMPOLINE(MoviePlay) {
+    static bool Callback(const char* name, u32 skipButtons, u32 bits2, void (*done)(), s32 index, u32 a5, u32 a6, s32 pad, u32 a8) {
+        uintptr_t from = reinterpret_cast<uintptr_t>(__builtin_return_address(0)) - exl::util::modules::GetTargetStart();
+        if ((from == off::LadderEnding_CreditsMovie1Return || from == off::LadderEnding_CreditsMovie2Return) &&
+            config::SkipTowerCredits()) {
+            Log("tower ending: credits movie %s skipped (skip_tower_credits=1)", name ? name : "?");
+            return false;
+        }
+        return Orig(name, skipButtons, bits2, done, index, a5, a6, pad, a8);
+    }
+};
+
 // Logs which code raised a Krypt critical error ("error contacting the server" kicks you out).
 HOOK_DEFINE_TRAMPOLINE(KryptCriticalError) {
     static void Callback(const void* message, bool fatal) {
@@ -369,6 +383,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     portals::Install();
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);
+    MoviePlay::InstallAtOffset(off::MoviePlayer_Movie_Play);
     KryptCleanup::InstallAtOffset(off::MK11Krypt_CleanupKryptCommon);
     KryptDestroy::InstallAtOffset(off::MK11Krypt_Dtor);
 
