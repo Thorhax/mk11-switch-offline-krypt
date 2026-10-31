@@ -197,6 +197,23 @@ Item notes:
   Hence off by default.
 - The confirmation text says "Time Krystals" (`KombatFeed.ConfirmPurchase`); the price icon is the Krystal one.
 
+## Character select: Cyrax, Sektor, Kronika (investigation, 2026-11-01)
+- The versus grid (`UIPlayerSelectModuleScreen`) is 6×7 cells (`UIGridSelectionNavTable` from the menu script:
+  per cell its own and its left/right/up/down (column,row)). 37 are used; free: (row,col) (0,0) (0,5) (6,0) (6,1)
+  (6,5).
+- The roster is `charTable` in `PlayerSelect.mko` (system art): 37 rows of 0x30 bytes —
+  `{s32 row, s32 col, "CHAR_ShangTsung", "ShangTsung" (portrait in ui_ps_CharacterImages), "SHT", "", 0}`.
+  Read with `LoadScriptFromSystemArt("PlayerSelect.mko")` + `ScriptObj::GetVariable("charTable")` /
+  `GetRowCount`. The script hides every cell (`SetCellHidden`) and shows each row with
+  `SetCellImage(row, col, "MainlineManaged/UI/ui_ps_CharacterImages/", portrait)`; free cells are asked
+  `FGGameInfo::IsHiddenCharacter("")`.
+- `CHAR_Cyrax`, `CHAR_Sektor`, `CHAR_Kronika` fighter scripts exist (story / boss), but none has the per-fighter
+  data playable ones have (`<Name>.Title`, `Exp_<Name>`, `<Name>FatalityHeadUnlock`; only `Char_Kronika`).
+- Next steps: add rows for the free cells (the script iterates the table itself, so the row count it uses must
+  grow too), find the 3-letter keys and portraits, then follow selection into variation/loadout select and fight
+  loading. Expect gaps (no loadouts/XP for them); keep it to offline local modes.
+- Logger used: `roster.cpp` (kept out of the build; a copy of the hooks is in the session notes).
+
 ## Tooling
 
 - **Rig:** `tools/rig/sb.py` drives the console through sys-botbase (buttons, screenshots).
