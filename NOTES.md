@@ -20,9 +20,11 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Time Krystals | Never touched |
 | Boot error 2123-0011 | Removed: the ShowError call in OnlineSystemGetEndpoints::FiberExecute is skipped |
 | "Unable to sync your online inventory" (Kustomize, fights) | Removed: the Yes/No boxes are answered Yes without being shown |
-| Klassic Towers | Works offline (tested 2026-10-31, Novice x3): full mode, tower record on the SD card (`portal/KlassicTowers` in krypt.dat), completions and score kept, end-of-fight and completion rewards granted, no crash. The HIGH SCORE line still reads 0 (it comes from separate server leaderboard data) |
+| Klassic Towers | Works offline (tested 2026-10-31, Novice x4): full mode, tower record on the SD card (`portal/KlassicTowers` in krypt.dat), completions and best score kept, end-of-fight and completion rewards granted |
 | End-of-match rewards (all modes) | Works: FGOnlineInventoryBatch::Post applied locally and answered, so totals no longer snap back |
-| Towers of Time | Not done yet |
+| Towers of Time | Works offline (tested 2026-10-31: Premier tower "Terror Squad", first tower): the menu opens, the current calendar towers are generated from the portal definition script, progress, best score, objective tick and rewards (including gear) are kept. Premier objective rewards (all 5 towers) and UpdateMultiplePortals (global requirements) are untested / only logged |
+| Tower credits | Skipped after each character ending (`skip_tower_credits=1`, the default) |
+| Tower HIGH SCORE | Shown offline from the stored best scores; RANK stays N/A (online leaderboard) |
 | Online modes | Unchanged: the patches only affect the Krypt entry path and the offline prompts above |
 
 ## Install (already on the test console)
@@ -113,6 +115,16 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
   `UpdatePortalEvent` returns the request's OnlineHydra object id in x0 (the caller calls
   `OnlineHydra::GetObjectById`). Getting this wrong corrupted memory and crashed after the credits.
 - All requests are logged to `portal_requests.jsonl`.
+- High scores: the tower screen reads the player's persistent event objects (`P<portal>_<stage>_<event>`,
+  data `{score, completionRank}`), which Hydra sends as `persistentData` with a record. Best scores are kept
+  in the record as `offline.persistent` and handed over with it (one `UpdatePortalGOSObject` call each).
+- Towers of Time: calendar towers come from `GetCalendarPortalInfos(lastPortalRequestTime)`; offline that
+  date is set to now and missing records are generated with `TimedPortalObj`, whose online
+  `CreateEventsAndStages` is routed to the base one (`<name>_PortalInit` in PortalDefinitions.mko) while
+  generating. The record's `endTime` is set from the tower's definition. The game clock (`time()`) reads 1970
+  offline, so `PlatformGetNetworkUTC` falls back to the console user clock.
+- Credits: the two credits movies in `BasicLadder_PlayLadderEnding` are skipped by making `Movie_Play` report
+  failure for those call sites.
 - exlaunch's trampoline pool holds 200 bytes per hook; `JitSize` was raised to 0x4000. Module code
   allocates from the game heap (`game::Malloc` etc.), not newlib's malloc.
 
