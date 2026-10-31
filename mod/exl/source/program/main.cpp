@@ -9,6 +9,7 @@
 #include "log.hpp"
 #include "mk11_offsets.hpp"
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 // MK11 offline Krypt.
@@ -72,6 +73,65 @@ namespace {
         game::Fn<void (*)(void*)>(off::MK11Krypt_RefreshWallet)(s_Krypt);
     }
 
+    // OnlineHydraSSC (OnlineHydraBase): +64 request state (3 = complete), +0x48 OnlineError whose
+    // +8 code is negative on failure, +0xe8 the response OnlineValueHandle.
+    constexpr ptrdiff_t SscStateOffset = 64;
+    constexpr ptrdiff_t SscErrorCodeOffset = 0x50;
+    constexpr ptrdiff_t SscResponseOffset = 0xe8;
+    constexpr s32 SscStateComplete = 3;
+
+    // The object text that follows `"key":` in `json` ("{...}"), or false.
+    bool FindObject(const char* json, const char* key, const char** start, size_t* len) {
+        const char* p = strstr(json, key);
+        if (!p) return false;
+        p += strlen(key);
+        if (*p != '{') return false;
+        int depth = 0;
+        bool inStr = false;
+        for (const char* q = p; *q; q++) {
+            if (inStr) { if (*q == '\\' && q[1]) q++; else if (*q == '"') inStr = false; continue; }
+            if (*q == '"') inStr = true;
+            else if (*q == '{') depth++;
+            else if (*q == '}' && --depth == 0) { *start = p; *len = q + 1 - p; return true; }
+        }
+        return false;
+    }
+
+    // The Krypt shows chest and vase rewards from the Hydra response to its save
+    // (GChestSSCHandle, read by MK11Krypt::ProcessPendingServerRewardRequest) and raises
+    // ErrorContactingServer when that request did not succeed. So each save returns a completed,
+    // successful OnlineHydraSSC whose response is {"rewards": <the batch's user_data.data>},
+    // which carries the unlockTracker items the reward pop-up lists.
+    void CompletedResponse(game::HydraHandle* out, const char* batchJson) {
+        void* user = game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1);
+        if (!user) return;
+        const void* userHandle = game::Fn<const void* (*)(void*)>(off::FGUserEntity_GetUserHandle)(user);
+        void* hydra = game::Fn<void* (*)()>(off::OnlineHydra_GetInstance)();
+        game::HydraHandle created = game::Fn<game::HydraHandle (*)(void*, const void*)>(off::OnlineHydra_InitSSC)(hydra, userHandle);
+        out->value = created.value;
+        auto ssc = static_cast<u8*>(out->value);
+        if (!ssc) return;
+
+        const char* rewards = nullptr;
+        size_t rewardsLen = 0;
+        char* text = nullptr;
+        if (batchJson && FindObject(batchJson, "\"user_data\":{\"data\":", &rewards, &rewardsLen)) {
+            text = static_cast<char*>(malloc(rewardsLen + 16));
+            if (text) snprintf(text, rewardsLen + 16, "{\"rewards\":%.*s}", (int)rewardsLen, rewards);
+        }
+        game::NRSString json(text ? text : "{}");
+        free(text);
+        game::OnlineValueHandle response = game::ParseFromJson(json);
+        if (response.value) {
+            auto slot = reinterpret_cast<game::OnlineValueHandle*>(ssc + SscResponseOffset);
+            game::Fn<void (*)(game::OnlineValueHandle*)>(off::OnlineValueHandle_Dtor)(slot);
+            slot->value = response.value;
+            response.value = nullptr;
+        }
+        *reinterpret_cast<s32*>(ssc + SscErrorCodeOffset) = 0;
+        *reinterpret_cast<s32*>(ssc + SscStateOffset) = SscStateComplete;
+    }
+
     // Store keys are "<background>/<save key>" so DLC backgrounds cannot collide.
     void MakeKey(char* out, size_t size, const game::NRSString& key) {
         snprintf(out, size, "%s/%s", game::KryptBackgroundName().c_str(), key.c_str());
@@ -111,6 +171,8 @@ HOOK_DEFINE_REPLACE(KryptSave) {
             RefreshKryptWallet();
         }
 
+        game::HydraHandle response;
+        bool responded = false;
         if (!game::Fn<bool (*)(void*)>(off::InventoryBatch_IsEmpty)(batch)) {
             game::OnlineValueHandle batchValue = game::Fn<game::OnlineValueHandle (*)(void*)>(off::InventoryBatch_ToOnlineValue)(batch);
             if (batchValue.value) {
@@ -119,11 +181,14 @@ HOOK_DEFINE_REPLACE(KryptSave) {
                 Log("Krypt save: inventory batch %.300s", json.c_str());
                 batch::Apply(json.c_str());
                 RefreshKryptWallet();
+                CompletedResponse(&response, json.c_str());
+                responded = true;
             }
         }
+        if (!responded) CompletedResponse(&response, nullptr);
 
         game::InvokeSaveCallback(done, true);
-        return {};
+        return response;
     }
 };
 

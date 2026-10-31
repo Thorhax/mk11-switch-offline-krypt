@@ -11,6 +11,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Krypt progress (chests opened, map, intro, unlocked areas) saved and restored | Works, survives game restarts |
 | Koins / Souls / Hearts balances offline | Works (on-console wallet) |
 | Crafting materials and Konsumables from chests | Works in v0.3 (on-console wallet; shown under Inventory → Forge Items) |
+| Reward pop-ups / no "error contacting server" after chests and vases | v0.3: each save returns a completed server reply; awaiting a test on a chest or vase |
 | Chest costs deducted | Works |
 | Chest unlockables (concept art etc.) granted | Works (local profile unlock bits) |
 | Gear rewards from chests | Fixed in v0.2 (on via `apply_gear_rewards=1`), not yet seen from a real chest (the chests opened so far rolled Koins, Hearts, materials and Konsumables) |
@@ -71,7 +72,13 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
 4. **Wallet.** MK11 keeps no offline balance for Koins, Souls or Hearts, because their `ExperienceInfo`
    offline stat id is unused. So while there is no Hydra connection,
    `ExperienceView::GetExperience` / `OnInventoryUpdated` read and write `krypt.dat` instead.
-5. **Rewards.** The `FGOnlineInventoryBatch` passed to `Save` is serialised with `ToOnlineValue` and
+5. **Server reply.** The Krypt keeps the save's `HydraHandle<OnlineHydraSSC>` in `GChestSSCHandle`.
+   `MK11Krypt::ProcessPendingServerRewardRequest` waits for it, builds the reward pop-up from
+   `response["rewards"]["unlockTracker"]`, and raises `ErrorContactingServer` (kicking you out of the Krypt)
+   when the request did not succeed. `Save` therefore creates an `OnlineHydraSSC` through
+   `OnlineHydra::HydraObjectInit`, sets state +64 = 3 (complete) and error code +0x50 = 0, and stores
+   `{"rewards": <batch user_data.data>}` as its response (+0xe8).
+6. **Rewards.** The `FGOnlineInventoryBatch` passed to `Save` is serialised with `ToOnlineValue` and
    applied by `batch_apply.cpp`:
    - `inc_consumable` → wallet. Crafting materials and Konsumables (`SpendableItemInventory`) are
      only counted in the Hydra inventory (`OnlineInventory::GetConsumable`), so offline

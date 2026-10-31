@@ -43,6 +43,9 @@ namespace mk11::off {
     constexpr ptrdiff_t InventoryBatch_ToOnlineValue = 0x2042178; // FGOnlineInventoryBatch::ToOnlineValue()
     constexpr ptrdiff_t ExperienceView_GetExperience = 0x2531990; // ExperienceView::GetExperience() const
     constexpr ptrdiff_t ExperienceView_OnInventoryUpdated = 0x2531e34; // ExperienceView::OnInventoryUpdated(int)
+    constexpr ptrdiff_t FGUserEntity_GetUserHandle = 0x265d120; // FGUserEntity::GetUserHandle() const
+    constexpr ptrdiff_t OnlineHydra_GetInstance = 0x198fb64; // OnlineHydra::GetInstance()
+    constexpr ptrdiff_t OnlineHydra_InitSSC = 0x1a31248; // HydraHandle<OnlineHydraSSC> OnlineHydra::HydraObjectInit<OnlineHydraSSC>(NRS::NRSUserHandle)
     constexpr ptrdiff_t SpendableItemInventory_GetCurrentBalance = 0x21c1bd8; // SpendableItemInventory::GetCurrentBalance(SpendableItemDefinition const&) const
     constexpr ptrdiff_t GetActiveModeUser = 0x20329f8; // GetActiveModeUser(int, unsigned int)
     constexpr ptrdiff_t GMK11Unlockables = 0xbf832e0; // GMK11Unlockables

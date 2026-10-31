@@ -43,6 +43,7 @@ namespace mk11::game {
 
         HydraHandle() = default;
         HydraHandle(const HydraHandle&) = delete;
+        HydraHandle(HydraHandle&& other) : value(other.value) { other.value = nullptr; }
         ~HydraHandle() {}
     };
 
