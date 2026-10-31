@@ -44,6 +44,8 @@ namespace mk11::off {
     constexpr ptrdiff_t InventoryBatch_GetBatchSize = 0x2042490; // FGOnlineInventoryBatch::GetBatchSize() const
     constexpr ptrdiff_t Game_malloc = 0x36afb8; // malloc
     constexpr ptrdiff_t Game_free = 0x36afd4; // free
+    constexpr ptrdiff_t Game_calloc = 0x36aff0; // calloc
+    constexpr ptrdiff_t Game_realloc = 0x36b030; // realloc
     constexpr ptrdiff_t MK11Krypt_InitializeKrypt = 0x212f158; // MK11Krypt::InitializeKrypt()
     constexpr ptrdiff_t InventoryBatch_ToOnlineValue = 0x2042178; // FGOnlineInventoryBatch::ToOnlineValue()
     constexpr ptrdiff_t ExperienceView_GetExperience = 0x2531990; // ExperienceView::GetExperience() const

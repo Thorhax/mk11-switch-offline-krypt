@@ -1,9 +1,18 @@
 #include "json.hpp"
+#include "game.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
 namespace mk11::json {
+
+    // All allocations use the game's heap: newlib's malloc has no heap in this module.
+    namespace {
+        void* malloc(size_t n) { return game::Malloc(n); }
+        void* calloc(size_t n, size_t size) { return game::Calloc(n, size); }
+        void* realloc(void* p, size_t n) { return game::Realloc(p, n); }
+        void free(void* p) { game::Free(p); }
+    }
 
     enum class Type { Null, Bool, Number, String, Array, Object };
 

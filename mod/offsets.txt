@@ -48,6 +48,8 @@ InventoryBatch_IsEmpty = FGOnlineInventoryBatch::IsEmpty() const
 InventoryBatch_GetBatchSize = FGOnlineInventoryBatch::GetBatchSize() const
 Game_malloc = malloc
 Game_free = free
+Game_calloc = calloc
+Game_realloc = realloc
 MK11Krypt_InitializeKrypt = MK11Krypt::InitializeKrypt()
 InventoryBatch_ToOnlineValue = FGOnlineInventoryBatch::ToOnlineValue()
 # Stage 3: offline wallet for Koins and Hearts (MK11 keeps no offline balance for them)

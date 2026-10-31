@@ -67,7 +67,16 @@ namespace mk11::game {
     }
 
     inline void* Malloc(size_t n) { return Fn<void* (*)(size_t)>(off::Game_malloc)(n); }
-    inline void Free(void* p) { Fn<void (*)(void*)>(off::Game_free)(p); }
+    inline void Free(void* p) { if (p) Fn<void (*)(void*)>(off::Game_free)(p); }
+    inline void* Calloc(size_t n, size_t size) { return Fn<void* (*)(size_t, size_t)>(off::Game_calloc)(n, size); }
+    inline void* Realloc(void* p, size_t n) { return Fn<void* (*)(void*, size_t)>(off::Game_realloc)(p, n); }
+    // strdup on the game's heap (free with Free).
+    inline char* StrDup(const char* s) {
+        size_t n = __builtin_strlen(s) + 1;
+        auto out = static_cast<char*>(Malloc(n));
+        if (out) __builtin_memcpy(out, s, n);
+        return out;
+    }
 
     // NRS::Function<void (bool, HydraHandle<OnlineHydraSSC>)>: points at a block whose +0x20 holds
     // the callable; the call operator is vtable slot 6 taking (callable, bool&&, HydraHandle&&).

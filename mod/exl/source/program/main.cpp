@@ -105,11 +105,11 @@ namespace {
         size_t rewardsLen = 0;
         char* text = nullptr;
         if (batchJson && FindObject(batchJson, "\"user_data\":", &rewards, &rewardsLen)) {
-            text = static_cast<char*>(malloc(rewardsLen + 48));
+            text = static_cast<char*>(game::Malloc(rewardsLen + 48));
             if (text) snprintf(text, rewardsLen + 48, "{\"rewards\":{\"items\":[],\"user_data\":%.*s}}", (int)rewardsLen, rewards);
         }
         hydra::CompletedReply(out, text);
-        free(text);
+        game::Free(text);
         Log("Krypt save: server reply %p (%s)", out->value, rewardsLen ? "with rewards" : "empty");
     }
 
@@ -262,7 +262,7 @@ namespace {
         if (!list) list = json::Find(root, "inc_consumable");
         size_t size = 64;
         for (size_t i = 0; i < json::Count(list); i++) size += 96;
-        char* out = static_cast<char*>(malloc(size));
+        char* out = static_cast<char*>(game::Malloc(size));
         int n = snprintf(out, size, "{\"rewards\":{\"items\":[");
         bool first = true;
         for (size_t i = 0; i < json::Count(list); i++) {
@@ -307,14 +307,14 @@ HOOK_DEFINE_TRAMPOLINE(HydraPost) {
         char* bodyText = nullptr;
         if (body && body->value) {
             game::NRSString text = game::ToJsonString(body->value);
-            bodyText = strdup(text.c_str());
+            bodyText = game::StrDup(text.c_str());
         }
         char* replyText = BatchReply(bodyText ? bodyText : "{}");
-        free(bodyText);
+        game::Free(bodyText);
         game::HydraHandle reply;
         hydra::CompletedReply(&reply, replyText);
         Log("inventory post %s answered: %.300s", endpoint->c_str(), replyText);
-        free(replyText);
+        game::Free(replyText);
         hydra::InvokeCompletion(done, &reply);
         return reply;
     }
