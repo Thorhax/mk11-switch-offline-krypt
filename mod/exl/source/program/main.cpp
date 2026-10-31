@@ -358,6 +358,109 @@ HOOK_DEFINE_TRAMPOLINE(HydraPost) {
     }
 };
 
+// Story Mode: rewards for a story fight are only prepared while connected, then a proc
+// (StoryRewardSSCProcData, the batch at +0x18) asks Hydra to grant them with RewardStorySequence and,
+// once that succeeds, marks the sequence rewarded. Offline the rewards are prepared too, and the request
+// applies the proc's batch locally and returns a completed reply.
+namespace {
+    constexpr ptrdiff_t StoryProcBatchOffset = 0x18;
+}
+
+// Story chapters finished offline were never rewarded ("you will not receive your rewards until you
+// reconnect"); a story fight only asks for its reward the first time. When the story menu refreshes its
+// server data (StoryInfo::UpdateServerProgressionData) offline, every completed sequence of the loaded
+// story part without its reward gets it now: the game's own reward table for the sequence
+// (GetRewardsLootTableForSequence) is applied like a reward batch and the sequence is marked rewarded.
+namespace {
+    constexpr ptrdiff_t StoryInfoFlowOffset = 4;             // StoryFlowType (story part) loaded
+    constexpr ptrdiff_t StoryInfoSequenceCountOffset = 1504;  // sequences in the loaded reward table
+}
+
+namespace {
+    void CatchUpStoryRewards(void* story, void* user) {
+        if (story && user && !game::Fn<bool (*)(void*)>(off::FGUserEntity_IsConnectedToHydra)(user)) {
+            s32 flow = static_cast<u8*>(story)[StoryInfoFlowOffset];
+            s32 count = *reinterpret_cast<s32*>(static_cast<u8*>(story) + StoryInfoSequenceCountOffset);
+            int granted = 0, completedCount = 0;
+            store::Batch storeBatch;
+            for (s32 seq = 0; seq < count && seq < 512; seq++) {
+                auto completed = game::Fn<bool (*)(void*, s32, s32, u32)>(off::SaveDataUtils_HasCompletedStorySequence);
+                if (!completed(user, flow, seq, 0) && !completed(user, flow, seq, 1)) continue;
+                completedCount++;
+                if (game::Fn<bool (*)(void*, s32, s32)>(off::SaveDataUtils_HasStorySequenceRewardBeenGiven)(user, flow, seq)) continue;
+                alignas(16) u8 batchObject[0x400] = {};
+                game::Fn<void (*)(void*)>(off::FGOnlineInventoryBatch_Ctor)(batchObject);
+                if (game::Fn<bool (*)(void*, s32, void*)>(off::StoryInfo_GetRewardsLootTableForSequence)(story, seq, batchObject)) {
+                    game::OnlineValueHandle value = game::Fn<game::OnlineValueHandle (*)(void*)>(off::InventoryBatch_ToOnlineValue)(batchObject);
+                    if (value.value) {
+                        game::NRSString json = game::ToJsonString(value.value);
+                        store::RecordBatch(json.c_str());
+                        Log("story: missed reward for part %d sequence %d: %.200s", flow, seq, json.c_str());
+                        batch::Apply(json.c_str());
+                        granted++;
+                    }
+                }
+                game::Fn<void (*)(void*)>(off::FGOnlineInventoryBatch_Dtor)(batchObject);
+                auto setGiven = game::Fn<void (*)(void*, s32, s32, bool)>(off::SaveDataUtils_SetStorySequenceRewardGiven);
+                setGiven(user, flow, seq, true);
+                setGiven(user, flow, seq, false);
+            }
+            if (count) Log("story: part %d: %d of %d sequences completed, %d missed reward(s) granted", flow, completedCount, count, granted);
+            if (granted) game::Fn<void (*)(void*)>(off::FGSaveDataManager_SaveProgressionData)(user);
+        }
+    }
+}
+
+HOOK_DEFINE_TRAMPOLINE(StoryCatchUp) {
+    static void Callback(void* story, void* user) {
+        CatchUpStoryRewards(story, user);
+        Orig(story, user);
+    }
+};
+
+// Story fights: the reward table is loaded while a story part plays; missed rewards are caught up as
+// the game sets up a fight's rewards (the fight's own reward then follows as usual).
+HOOK_DEFINE_TRAMPOLINE(StoryFightRewards) {
+    static void Callback(void* story, s32 sequence, bool flag) {
+        Log("story: rewards for sequence %d (flag %d)", sequence, flag);
+        CatchUpStoryRewards(story, game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1));
+        Orig(story, sequence, flag);
+    }
+};
+
+// Chapter select: the story part's reward table may be loaded here (UpdateServerProgressionData only runs
+// while online).
+HOOK_DEFINE_TRAMPOLINE(ChapterSelectEnter) {
+    static void Callback(void* driver) {
+        Orig(driver);
+        CatchUpStoryRewards(reinterpret_cast<void*>(exl::util::modules::GetTargetStart() + off::GFGStoryInfoStruct),
+                            game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1));
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(StoryReward) {
+    static game::HydraHandle Callback(const void* user, s32 flow, s32 sequence, bool flag, s32 retries) {
+        if (game::Fn<bool (*)(const void*)>(off::FGUserEntity_IsConnectedToHydra)(user)) return Orig(user, flow, sequence, flag, retries);
+        store::Batch storeBatch;
+        auto pdata = static_cast<u8*>(game::Fn<void* (*)(u32)>(off::GetCurrentProcPdata)(1));
+        uintptr_t vtable = exl::util::modules::GetTargetStart() + off::Vtable_StoryRewardSSCProcData + 0x10;
+        if (pdata && *reinterpret_cast<uintptr_t*>(pdata) == vtable) {
+            game::OnlineValueHandle value = game::Fn<game::OnlineValueHandle (*)(void*)>(off::InventoryBatch_ToOnlineValue)(pdata + StoryProcBatchOffset);
+            if (value.value) {
+                game::NRSString json = game::ToJsonString(value.value);
+                store::RecordBatch(json.c_str());
+                Log("story: sequence %d rewards %.300s", sequence, json.c_str());
+                batch::Apply(json.c_str());
+            }
+        } else {
+            Log("story: sequence %d reward request without its batch", sequence);
+        }
+        game::HydraHandle reply;
+        hydra::CompletedReply(&reply, nullptr);
+        return reply;
+    }
+};
+
 // Towers: the studio credits play (unskippably) after every character ending. Their two Movie_Play calls
 // in the ladder ending script report "not started" instead, which skips them (config skip_tower_credits).
 HOOK_DEFINE_TRAMPOLINE(MoviePlay) {
@@ -369,6 +472,15 @@ HOOK_DEFINE_TRAMPOLINE(MoviePlay) {
             return false;
         }
         return Orig(name, skipButtons, bits2, done, index, a5, a6, pad, a8);
+    }
+};
+
+// Logs where in-game OK message boxes come from (to find offline warnings).
+HOOK_DEFINE_TRAMPOLINE(OkMessageBox) {
+    static u64 Callback(void* pad, const void* text, u32 flags, s32 group) {
+        uintptr_t lr = reinterpret_cast<uintptr_t>(__builtin_return_address(0));
+        Log("message box from main+%#lx", lr - exl::util::modules::GetTargetStart());
+        return Orig(pad, text, flags, group);
     }
 };
 
@@ -423,6 +535,13 @@ extern "C" void exl_main(void* x0, void* x1) {
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);
     MoviePlay::InstallAtOffset(off::MoviePlayer_Movie_Play);
+    StoryReward::InstallAtOffset(off::MK11HydraSSCInterface_RewardStorySequence);
+    StoryCatchUp::InstallAtOffset(off::StoryInfo_UpdateServerProgressionData);
+    ChapterSelectEnter::InstallAtOffset(off::UIChapterSelectHUBDriver_Enter);
+    StoryFightRewards::InstallAtOffset(off::StoryInfo_SetupAndShowRewardsForFight);
+    OkMessageBox::InstallAtOffset(off::ShowOKMsgBox);
+    // Story fight rewards are prepared offline too (StoryReward grants them).
+    exl::patch::CodePatcher(off::StoryRewards_IsConnectedCall).Write<u32>(0x52800020);         // mov w0, #1
     KryptCleanup::InstallAtOffset(off::MK11Krypt_CleanupKryptCommon);
     KryptDestroy::InstallAtOffset(off::MK11Krypt_Dtor);
 

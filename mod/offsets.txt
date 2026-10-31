@@ -17,7 +17,6 @@ KryptSaveRestore_Save = MK11KryptSaveRestore::Save(TArray<FKryptSaveDataBase con
 # Call sites inside MKS_MainMenu::GoingToKrypt (script lines 2964 and 3039)
 GoingToKrypt_IsUserSignedInCall = 0x5b0e3b4
 GoingToKrypt_EnsureInventorySyncedCall = 0x5b0e978
-ShowOKMsgBox = ShowOKMsgBox(GAMEPAD*, void const*, unsigned int, UIScreenGroup)
 ForceAttemptToReconnect = ForceAttemptToReconnect()
 MKOnline_IsUserSignedIn = MKOnline_IsUserSignedIn(FGUserEntity*, bool, bool*)
 VM_CallScriptFunction_bool = bool MKS::VM::CallScriptFunction<bool>(MKS::ScriptObj*, unsigned int, unsigned int, ...)
@@ -153,3 +152,22 @@ MK11PortalObj_CreateEventsAndStages = MK11PortalObj::CreateEventsAndStages()
 MK11ExperienceManager_GetExperienceType = MK11ExperienceManager::GetExperienceType(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&) const
 ExperienceUser_GetExperienceView = ExperienceUser::GetExperienceView(EExperienceType) const
 FGUserEntity_GetExperienceUser = FGUserEntity::GetExperienceUser()
+# Story Mode rewards
+# StoryInfo::SetupAndShowRewardsForFight: the IsConnectedToHydra check that skips all rewards offline.
+StoryRewards_IsConnectedCall = 0x25006d0
+MK11HydraSSCInterface_RewardStorySequence = MK11HydraSSCInterface::RewardStorySequence(FGUserEntity const&, StoryFlowType, int, bool, int)
+GetCurrentProcPdata = GetCurrentProcPdata(unsigned int)
+Vtable_StoryRewardSSCProcData = vtable for StoryRewardSSCProcData
+StoryInfo_UpdateServerProgressionData = StoryInfo::UpdateServerProgressionData(FGUserEntity*)
+StoryInfo_GetRewardsLootTableForSequence = StoryInfo::GetRewardsLootTableForSequence(int, FGOnlineInventoryBatch&)
+SaveDataUtils_HasCompletedStorySequence = SaveDataUtils::HasCompletedStorySequence(FGUserEntity*, StoryFlowType, int, unsigned int)
+SaveDataUtils_HasStorySequenceRewardBeenGiven = SaveDataUtils::HasStorySequenceRewardBeenGiven(FGUserEntity*, StoryFlowType, int)
+SaveDataUtils_SetStorySequenceRewardGiven = SaveDataUtils::SetStorySequenceRewardGiven(FGUserEntity*, StoryFlowType, int, bool)
+FGSaveDataManager_SaveProgressionData = FGSaveDataManager::SaveProgressionData(FGUserEntity*)
+FGOnlineInventoryBatch_Ctor = FGOnlineInventoryBatch::FGOnlineInventoryBatch()
+# FGOnlineInventoryBatch::~FGOnlineInventoryBatch() as SetupAndShowRewardsForFight calls it
+FGOnlineInventoryBatch_Dtor = 0x204068c
+GFGStoryInfoStruct = GFGStoryInfoStruct
+UIChapterSelectHUBDriver_Enter = UIChapterSelectHUBDriver::Enter()
+StoryInfo_SetupAndShowRewardsForFight = StoryInfo::SetupAndShowRewardsForFight(int, bool)
+ShowOKMsgBox = ShowOKMsgBox(GAMEPAD*, void const*, unsigned int, UIScreenGroup)

@@ -20,7 +20,6 @@ namespace mk11::off {
     constexpr ptrdiff_t KryptSaveRestore_Save = 0x21691a0; // MK11KryptSaveRestore::Save(TArray<FKryptSaveDataBase const*, 8u, NRS::DefaultContainerAllocator> const&, FGOnlineInventoryBatch&, NRS::Function<void (bool, HydraHandle<OnlineHydraSSC>)> const&)
     constexpr ptrdiff_t GoingToKrypt_IsUserSignedInCall = 0x5b0e3b4;
     constexpr ptrdiff_t GoingToKrypt_EnsureInventorySyncedCall = 0x5b0e978;
-    constexpr ptrdiff_t ShowOKMsgBox = 0x1f93554; // ShowOKMsgBox(GAMEPAD*, void const*, unsigned int, UIScreenGroup)
     constexpr ptrdiff_t ForceAttemptToReconnect = 0x269f868; // ForceAttemptToReconnect()
     constexpr ptrdiff_t MKOnline_IsUserSignedIn = 0x25e7b88; // MKOnline_IsUserSignedIn(FGUserEntity*, bool, bool*)
     constexpr ptrdiff_t VM_CallScriptFunction_bool = 0x280e18c; // bool MKS::VM::CallScriptFunction<bool>(MKS::ScriptObj*, unsigned int, unsigned int, ...)
@@ -129,4 +128,20 @@ namespace mk11::off {
     constexpr ptrdiff_t MK11ExperienceManager_GetExperienceType = 0x2532f04; // MK11ExperienceManager::GetExperienceType(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&) const
     constexpr ptrdiff_t ExperienceUser_GetExperienceView = 0x2532524; // ExperienceUser::GetExperienceView(EExperienceType) const
     constexpr ptrdiff_t FGUserEntity_GetExperienceUser = 0x265d7e0; // FGUserEntity::GetExperienceUser()
+    constexpr ptrdiff_t StoryRewards_IsConnectedCall = 0x25006d0;
+    constexpr ptrdiff_t MK11HydraSSCInterface_RewardStorySequence = 0x235e2b8; // MK11HydraSSCInterface::RewardStorySequence(FGUserEntity const&, StoryFlowType, int, bool, int)
+    constexpr ptrdiff_t GetCurrentProcPdata = 0x1fa8fc8; // GetCurrentProcPdata(unsigned int)
+    constexpr ptrdiff_t Vtable_StoryRewardSSCProcData = 0xa96ede0; // vtable for StoryRewardSSCProcData
+    constexpr ptrdiff_t StoryInfo_UpdateServerProgressionData = 0x25013a8; // StoryInfo::UpdateServerProgressionData(FGUserEntity*)
+    constexpr ptrdiff_t StoryInfo_GetRewardsLootTableForSequence = 0x2500c94; // StoryInfo::GetRewardsLootTableForSequence(int, FGOnlineInventoryBatch&)
+    constexpr ptrdiff_t SaveDataUtils_HasCompletedStorySequence = 0x24ce7b4; // SaveDataUtils::HasCompletedStorySequence(FGUserEntity*, StoryFlowType, int, unsigned int)
+    constexpr ptrdiff_t SaveDataUtils_HasStorySequenceRewardBeenGiven = 0x24ce8f0; // SaveDataUtils::HasStorySequenceRewardBeenGiven(FGUserEntity*, StoryFlowType, int)
+    constexpr ptrdiff_t SaveDataUtils_SetStorySequenceRewardGiven = 0x24ce9a8; // SaveDataUtils::SetStorySequenceRewardGiven(FGUserEntity*, StoryFlowType, int, bool)
+    constexpr ptrdiff_t FGSaveDataManager_SaveProgressionData = 0x1fb05bc; // FGSaveDataManager::SaveProgressionData(FGUserEntity*)
+    constexpr ptrdiff_t FGOnlineInventoryBatch_Ctor = 0x20404a4; // FGOnlineInventoryBatch::FGOnlineInventoryBatch()
+    constexpr ptrdiff_t FGOnlineInventoryBatch_Dtor = 0x204068c;
+    constexpr ptrdiff_t GFGStoryInfoStruct = 0xbe7fb50; // GFGStoryInfoStruct
+    constexpr ptrdiff_t UIChapterSelectHUBDriver_Enter = 0x232f424; // UIChapterSelectHUBDriver::Enter()
+    constexpr ptrdiff_t StoryInfo_SetupAndShowRewardsForFight = 0x2500670; // StoryInfo::SetupAndShowRewardsForFight(int, bool)
+    constexpr ptrdiff_t ShowOKMsgBox = 0x1f93554; // ShowOKMsgBox(GAMEPAD*, void const*, unsigned int, UIScreenGroup)
 }
