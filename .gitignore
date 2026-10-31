@@ -19,3 +19,4 @@ __pycache__/
 /third_party/
 # Local rig settings with the console login
 /tools/rig/rig.local.json
+/dist/
