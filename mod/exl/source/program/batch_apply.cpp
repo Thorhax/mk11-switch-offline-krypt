@@ -19,6 +19,8 @@ namespace mk11::wallet {
                strcmp(slug, "Exp_BrutalityHearts") == 0;
     }
 
+    bool ManagesSpendable(const char* slug) { return strncmp(slug, "Exp_", 4) != 0; }
+
     int Get(const char* slug) {
         char key[64];
         Key(key, sizeof(key), slug);
@@ -97,7 +99,7 @@ namespace mk11::batch {
             char slug[64];
             long long amount = 0;
             if (!StringField(o, e, "item_slug", slug, sizeof(slug)) || !IntField(o, e, "inc_amount", &amount)) return;
-            if (!wallet::Manages(slug)) {
+            if (!wallet::Manages(slug) && !wallet::ManagesSpendable(slug)) {
                 Log("batch: consumable %s %+lld left to the game", slug, amount);
                 return;
             }

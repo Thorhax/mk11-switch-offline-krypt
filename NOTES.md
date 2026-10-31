@@ -3,16 +3,17 @@
 Goal: play the Krypt on the console with no server. MK11 Ultimate 1.0.26, title 0100F2200C984000,
 main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 
-## Status (2026-10-31, v0.2)
+## Status (2026-10-31, v0.3)
 
 | Area | State |
 |---|---|
 | Entering the Krypt offline | Works |
 | Krypt progress (chests opened, map, intro, unlocked areas) saved and restored | Works, survives game restarts |
 | Koins / Souls / Hearts balances offline | Works (on-console wallet) |
+| Crafting materials and Konsumables from chests | Works in v0.3 (on-console wallet; shown under Inventory → Forge Items) |
 | Chest costs deducted | Works |
 | Chest unlockables (concept art etc.) granted | Works (local profile unlock bits) |
-| Gear rewards from chests | Fixed in v0.2 (on via `apply_gear_rewards=1`), not yet seen from a real chest |
+| Gear rewards from chests | Fixed in v0.2 (on via `apply_gear_rewards=1`), not yet seen from a real chest (the chests opened so far rolled Koins, Hearts, materials and Konsumables) |
 | Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize |
 | Time Krystals | Never touched |
 | Online modes | Unchanged: the patches only affect the Krypt entry path |
@@ -25,13 +26,14 @@ atmosphere/contents/0100F2200C984000/exefs/main.npdm  game npdm + svcs 0x40/0x43
 mk11offline/config.ini                                optional settings
 ```
 
-Release copies: `mod/releases/v0.2-give-items/` (current), `mod/releases/v0.1-offline-krypt/`. To uninstall, delete the `exefs` folder.
+Release copies: `mod/releases/v0.3-materials/` (current), `mod/releases/v0.2-give-items/`, `mod/releases/v0.1-offline-krypt/`. To uninstall, delete the `exefs` folder.
 
 ## Files the module writes on the SD card (`sdmc:/mk11offline/`)
 
 - `krypt.dat`: the Krypt progress plus the wallet, one `key<TAB>json` line each. Readable and editable.
-  `krypt.bak` is the previous version. The wallet lines are `wallet/Exp_Koins`, `wallet/Exp_SoulFragments`
-  and `wallet/Exp_BrutalityHearts`.
+  `krypt.bak` is the previous version. The wallet lines are `wallet/Exp_Koins`, `wallet/Exp_SoulFragments`,
+  `wallet/Exp_BrutalityHearts`, and one `wallet/<item>` line per crafting material or Konsumable
+  (e.g. `wallet/CopperPlating`).
 - `inventory_batches.jsonl`: every reward batch the Krypt would have sent to the server, one per line.
 - `log.txt`: the module's log for the current run.
 - `replay_batch.json` (if you create it): applied once at the next Krypt save, then deleted.
@@ -71,7 +73,10 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
    `ExperienceView::GetExperience` / `OnInventoryUpdated` read and write `krypt.dat` instead.
 5. **Rewards.** The `FGOnlineInventoryBatch` passed to `Save` is serialised with `ToOnlineValue` and
    applied by `batch_apply.cpp`:
-   - `inc_consumable` → wallet
+   - `inc_consumable` → wallet. Crafting materials and Konsumables (`SpendableItemInventory`) are
+     only counted in the Hydra inventory (`OnlineInventory::GetConsumable`), so offline
+     `SpendableItemInventory::GetCurrentBalance` is hooked to read the wallet for every slug
+     without the `Exp_` prefix. v0.2 and earlier dropped these rewards.
    - `game_unlockables` → `MK11Unlockables::Unlock(GMK11Unlockables, user, bit, page)`
    - `add_game_item` → gear (gated)
 

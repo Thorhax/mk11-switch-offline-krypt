@@ -43,6 +43,7 @@ InventoryBatch_ToOnlineValue = FGOnlineInventoryBatch::ToOnlineValue()
 # Stage 3: offline wallet for Koins and Hearts (MK11 keeps no offline balance for them)
 ExperienceView_GetExperience = ExperienceView::GetExperience() const
 ExperienceView_OnInventoryUpdated = ExperienceView::OnInventoryUpdated(int)
+SpendableItemInventory_GetCurrentBalance = SpendableItemInventory::GetCurrentBalance(SpendableItemDefinition const&) const
 GetActiveModeUser = GetActiveModeUser(int, unsigned int)
 GMK11Unlockables = GMK11Unlockables
 MK11Unlockables_UnlockPageBit = MK11Unlockables::Unlock(FGUserEntity*, unsigned int, unsigned int)

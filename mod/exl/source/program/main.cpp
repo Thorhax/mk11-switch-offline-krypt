@@ -22,7 +22,9 @@
 //    (batch_apply) and also kept in inventory_batches.jsonl.
 //  Wallet: MK11 keeps no offline balance for Koins, Souls and Hearts (their offline stat id is
 //    unused), so while there is no Hydra connection their ExperienceView value lives in
-//    krypt_store. Time Krystals (Exp_PremiumCurrency) are never touched.
+//    krypt_store. Crafting materials and Konsumables (SpendableItemInventory) are kept only in
+//    the Hydra inventory, so offline their counts live in krypt_store as well. Time Krystals
+//    (Exp_PremiumCurrency) are never touched.
 //  Optional: config.ini krypt_currency_topup=N tops Koins/Souls/Hearts up to N on Krypt start.
 
 using namespace mk11;
@@ -152,6 +154,18 @@ HOOK_DEFINE_TRAMPOLINE(WalletSet) {
     }
 };
 
+// SpendableItemInventory: +0 FGUserEntity*. SpendableItemDefinition: +8 the item name.
+HOOK_DEFINE_TRAMPOLINE(SpendableBalance) {
+    static s32 Callback(const void* inventory, const void* def) {
+        void* user = *reinterpret_cast<void* const*>(inventory);
+        const char* slug = reinterpret_cast<const game::NRSString*>(static_cast<const u8*>(def) + 8)->c_str();
+        if (user && slug && wallet::ManagesSpendable(slug) &&
+            !game::Fn<bool (*)(void*)>(off::FGUserEntity_IsConnectedToHydra)(user))
+            return wallet::Get(slug);
+        return Orig(inventory, def);
+    }
+};
+
 HOOK_DEFINE_TRAMPOLINE(KryptInitialize) {
     static void Callback(void* krypt) {
         Orig(krypt);
@@ -186,6 +200,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     KryptInitialize::InstallAtOffset(off::MK11Krypt_InitializeKrypt);
     WalletGet::InstallAtOffset(off::ExperienceView_GetExperience);
     WalletSet::InstallAtOffset(off::ExperienceView_OnInventoryUpdated);
+    SpendableBalance::InstallAtOffset(off::SpendableItemInventory_GetCurrentBalance);
 }
 
 extern "C" NORETURN void exl_exception_entry() {
