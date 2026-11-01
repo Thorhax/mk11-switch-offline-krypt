@@ -156,6 +156,10 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
   the bool is set does it fall back to building the gear from the entry's GUID (Story fights pass true). Our reply's
   `items` is empty, and `KryptExecuteStoreTrade` (Kollector) and `ProcessPendingServerRewardRequest` (chests,
   vases) pass false, so gear was granted without a pop-up. Both call sites now pass true (2026-11-01).
+- Free spending (config.ini, off by default): `free_currency=1` / `free_items=1` make `wallet::Set` ignore
+  decreases of Koins, Souls, Hearts and Time Krystals / of spendable items (materials, relics, keys,
+  Konsumables). Every offline spend goes through the wallet, so this covers the Krypt, Shrine, Kollector,
+  Forge, store and key summons. Verified with a store purchase (Time Krystals stayed at 400), 2026-11-01.
 - Credits: the two credits movies in `BasicLadder_PlayLadderEnding` are skipped by making `Movie_Play` report
   failure for those call sites.
 - exlaunch's trampoline pool holds 200 bytes per hook; `JitSize` was raised to 0x4000. Module code

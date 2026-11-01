@@ -21,6 +21,16 @@ namespace mk11::wallet {
 
     bool ManagesSpendable(const char* slug) { return strncmp(slug, "Exp_", 4) != 0; }
 
+    namespace {
+        // free_currency / free_items: spending leaves these balances as they were (XP is never affected).
+        bool SpendingIsFree(const char* slug) {
+            if (!Manages(slug)) return config::FreeItems();
+            for (const char* currency : { "Exp_Koins", "Exp_SoulFragments", "Exp_BrutalityHearts", "Exp_PremiumCurrency" })
+                if (strcmp(slug, currency) == 0) return config::FreeCurrency();
+            return false;
+        }
+    }
+
     int Get(const char* slug) {
         char key[64];
         Key(key, sizeof(key), slug);
@@ -30,6 +40,10 @@ namespace mk11::wallet {
 
     void Set(const char* slug, int value) {
         if (value < 0) value = 0;
+        if (int current = Get(slug); value < current && SpendingIsFree(slug)) {
+            Log("wallet: %s stays %d (spent %d, free)", slug, current, current - value);
+            return;
+        }
         char key[64], text[16];
         Key(key, sizeof(key), slug);
         snprintf(text, sizeof(text), "%d", value);

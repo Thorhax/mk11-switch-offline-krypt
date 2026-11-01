@@ -19,4 +19,8 @@ namespace mk11::config {
     bool P1Cpu();
     // Offline Daily Challenges on the Kombat Kard (on unless daily_challenges=0).
     bool DailyChallenges();
+    // Spending never lowers Koins, Souls, Hearts or Time Krystals (free_currency=1).
+    bool FreeCurrency();
+    // Spending never lowers crafting materials, Kollector relics, keys or Konsumables (free_items=1).
+    bool FreeItems();
 }

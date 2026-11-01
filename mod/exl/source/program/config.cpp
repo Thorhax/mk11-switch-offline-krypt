@@ -20,6 +20,8 @@ namespace mk11::config {
         int s_ChestKrystals = 10;
         bool s_P1Cpu = false;
         bool s_DailyChallenges = true;
+        bool s_FreeCurrency = false;
+        bool s_FreeItems = false;
 
         void Apply(const char* key, const char* value) {
             if (strcmp(key, "krypt_currency_topup") == 0) s_TopUp = atoi(value);
@@ -29,12 +31,14 @@ namespace mk11::config {
             else if (strcmp(key, "krypt_chest_krystals") == 0) s_ChestKrystals = atoi(value);
             else if (strcmp(key, "p1_cpu") == 0) s_P1Cpu = atoi(value) != 0;
             else if (strcmp(key, "daily_challenges") == 0) s_DailyChallenges = atoi(value) != 0;
+            else if (strcmp(key, "free_currency") == 0) s_FreeCurrency = atoi(value) != 0;
+            else if (strcmp(key, "free_items") == 0) s_FreeItems = atoi(value) != 0;
         }
 
         void Load() {
             s_Loaded = true;
             if (!MountSd()) return;
-            char buf[2048];
+            char buf[4096];
             u64 n = 0;
             nn::fs::FileHandle h;
             nn::fs::SetEnabledAutoAbort(false);
@@ -60,8 +64,8 @@ namespace mk11::config {
                 }
                 line = next;
             }
-            Log("config: krypt_currency_topup=%d apply_gear_rewards=%d skip_tower_credits=%d offline_store=%d krypt_chest_krystals=%d p1_cpu=%d", s_TopUp,
-                s_ApplyGear, s_SkipTowerCredits, s_OfflineStore, s_ChestKrystals, s_P1Cpu);
+            Log("config: krypt_currency_topup=%d apply_gear_rewards=%d skip_tower_credits=%d offline_store=%d krypt_chest_krystals=%d p1_cpu=%d free_currency=%d free_items=%d", s_TopUp,
+                s_ApplyGear, s_SkipTowerCredits, s_OfflineStore, s_ChestKrystals, s_P1Cpu, s_FreeCurrency, s_FreeItems);
         }
     }
 
@@ -83,6 +87,16 @@ namespace mk11::config {
     bool DailyChallenges() {
         if (!s_Loaded) Load();
         return s_DailyChallenges;
+    }
+
+    bool FreeCurrency() {
+        if (!s_Loaded) Load();
+        return s_FreeCurrency;
+    }
+
+    bool FreeItems() {
+        if (!s_Loaded) Load();
+        return s_FreeItems;
     }
 
     bool P1Cpu() {
