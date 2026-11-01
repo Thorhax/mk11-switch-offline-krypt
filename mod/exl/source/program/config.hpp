@@ -1,6 +1,7 @@
 #pragma once
 // Optional settings from sdmc:/mk11offline/config.ini ("key=value" lines, '#' comments).
-// Settings default to off when the file or key is absent, except skip_tower_credits (on).
+// Settings default to off when the file or key is absent, except skip_tower_credits and offline_store (on) and
+// krypt_chest_krystals (10).
 
 namespace mk11::config {
     // Koins/Souls/Hearts are topped up to this amount whenever the Krypt starts (0 = off).
@@ -10,7 +11,8 @@ namespace mk11::config {
     bool ApplyGearRewards();
     // The studio credits after a tower's character ending are skipped unless skip_tower_credits=0.
     bool SkipTowerCredits();
-    // The Store (ZR) opens with the offline catalogue only when offline_store=1 (experimental: showing the
-    // catalogue can close the game).
+    // The Store (ZR) opens with the offline catalogue unless offline_store=0.
     bool OfflineStore();
+    // Time Krystals given for each Krypt chest opened (krypt_chest_krystals, default 10; 0 = off).
+    int KryptChestKrystals();
 }

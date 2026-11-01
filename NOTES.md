@@ -10,7 +10,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Entering the Krypt offline | Works |
 | Krypt progress (chests opened, map, intro, unlocked areas) saved and restored | Works, survives game restarts |
 | Koins / Souls / Hearts balances offline | Works (on-console wallet) |
-| Player, character and gear XP | Works (on-console wallet, every `Exp_` value but Time Krystals; tested: player level 1 -> 2) |
+| Player, character and gear XP | Works (on-console wallet, every `Exp_` value; tested: player level 1 -> 2) |
 | Crafting materials and Konsumables from chests | Works in v0.3 (on-console wallet; shown under Inventory → Forge Items) |
 | Reward pop-ups after chests and vases, no "error contacting server" kick | Works in v0.3 (user-tested): each save returns a completed server reply |
 | Chest costs deducted | Works |
@@ -18,7 +18,8 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Gear rewards from chests | v0.3: chests award item sequences, now resolved to their first item (the first gear chest froze the game in v0.2/early v0.3); sequence grant tested via give.txt, awaiting a real gear chest |
 | Forge | Works (user-tested): materials spent, result added |
 | Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize |
-| Time Krystals | Never touched |
+| Time Krystals | On-console wallet (`wallet/Exp_PremiumCurrency`): earned from player level-ups (as in the normal game) and Krypt chests (`krypt_chest_krystals`, default 10 per chest), spent in the Store |
+| Store (ZR) | Works offline (2026-11-01): 10 earnable items, 10 Time Krystals each by default, `store.txt` to change |
 | Boot error 2123-0011 | Removed: the ShowError call in OnlineSystemGetEndpoints::FiberExecute is skipped |
 | "Unable to sync your online inventory" (Kustomize, fights) | Removed: the Yes/No boxes are answered Yes without being shown |
 | Klassic Towers | Works offline (tested 2026-10-31, Novice x4): full mode, tower record on the SD card (`portal/KlassicTowers` in krypt.dat), completions and best score kept, end-of-fight and completion rewards granted |
@@ -61,6 +62,8 @@ Release copies: `mod/releases/v0.6-xp/` (current), `mod/releases/v0.5-towers-of-
 ```
 krypt_currency_topup=0   # >0: top Koins/Souls/Hearts up to this amount on each Krypt start
 apply_gear_rewards=1     # grant gear/augments from Krypt chests locally
+offline_store=1          # Store (ZR) with the offline catalogue
+krypt_chest_krystals=10  # Time Krystals per Krypt chest opened (0 = off)
 ```
 
 ## How it works
@@ -179,7 +182,7 @@ Item notes:
 - Kustomize shows "Unable to sync your online inventory": answer Yes. Granted augments (Mileena's
   Lvl. 4 set, 2026-10-31) can then be found and equipped; the user tested this on the console.
 
-## Store (ZR) — experimental (shop.cpp, `offline_store=1`)
+## Store (ZR) (shop.cpp, `offline_store=1`)
 - ZR opens `KombatFeedModalDriver` (Premium Shop + eShop pages). Offline the menu script's
   Nintendo-Account/reconnect check is skipped (`StoreOpen_ReconnectCheck`, applied at runtime only with
   `offline_store=1`), and the page's restriction and inventory-sync checks pass.
@@ -187,15 +190,18 @@ Item notes:
   `{mAvailabilities: [{mReward: loot table, mStartTime, mEndTime}]}` (several = quantity choice). Loot table
   `{dropCount: 1, items: [{LootItemType: "SpendableItemLootItem", dropWeight: 1, id, amount,
   premiumCurrencyPrice}]}`: `IsDataValid` wants exactly 9 + 1 slots and a non-zero premiumCurrencyPrice;
-  without dropWeight nothing drops. Currency loot items have no shop price. `store.txt` replaces it.
-- Price = Koins: `GetPremiumCurrencyCost` returns the Koin price; `PurchaseProduct` checks the Koin wallet and
-  swaps the batch's `Exp_PremiumCurrency` request for `Exp_Koins` (`AddCurrencyRequest`). Purchases and
-  grants worked (5,000 Koins → PortalKoins1Key).
-- **Open problem:** showing the products (`ShowPremiumShopSelections`) closes the game most of the time;
-  loading the catalogue without showing it never does. Ruled out: timing of the catalogue, the icon
-  packages/libraries, grid cells, product panel, timers, HasPurchased/IsCharacterLocked rules, the message box.
-  Hence off by default.
-- The confirmation text says "Time Krystals" (`KombatFeed.ConfirmPurchase`); the price icon is the Krystal one.
+  without dropWeight nothing drops. Currency loot items have no shop price. `store.txt` replaces it
+  (`<slug> <amount>:<price> ...`, 10 lines).
+- Price = Time Krystals (`premiumCurrencyPrice`), charged by the game's own `PurchaseProduct` batch
+  `{Exp_PremiumCurrency -price, item +amount}`, applied to the offline wallet. Tested: 10 Krystals →
+  PortalKoins1Key.
+- **The crash (solved 2026-11-01):** `LootTable::ApplyRulesToAllItems` only clears items' enabled flags
+  (`IRandomLootDrop`+12 bit 0). Other screens run inventory rules over the offer tables, leaving their only
+  item disabled; then `GetLootItemDescriptionLines` is empty and `RefreshPremiumShopPage_GridItem` →
+  `GetLootItemLine` copies line 0 from null (Data Abort at `TUNIString` copy), and a purchase rolls nothing.
+  `ShopLootRules` re-enables offer items after every rule pass; `ShopDescription` fills an empty description
+  from the items as a safety net. Found with an Atmosphère crash report once SaltyNX and the MK11 cheat file
+  were disabled (see Tooling).
 
 ## Character select: Cyrax, Sektor, Kronika (investigation, 2026-11-01)
 - The versus grid (`UIPlayerSelectModuleScreen`) is 6×7 cells (`UIGridSelectionNavTable` from the menu script:
@@ -230,8 +236,11 @@ Item notes:
   - `tools/strrefs.py` lists the string literals a function uses.
 - **Dumps:** `exefs/` came from DBI ("Installed games" → Update → browse → copy). `romfs` was only
   partly copied. sys-botbase can't peek the game's code pages.
-- **Crashes:** neither Atmosphère (no crash report) nor `crash.cpp`'s exception handler sees MK11 crashes
-  on this console — not even a deliberate null write (tested 2026-11-01). SaltyNX attaches to the game at
-  launch (`enableDebug 1`), which likely takes the exception path. Bisect with builds and the module log.
+- **Crashes:** a debugger attached to the game takes the exception, so neither Atmosphère's crash report
+  nor `crash.cpp`'s handler sees it. SaltyNX attaches at launch even for titles in its `exceptions.txt`
+  (only its plugins are skipped), and dmnt attaches when a cheat file for the build exists. With SaltyNX's
+  `boot2.flag` removed and `cheats/4F7AB1A3EEFC7EB2.txt` moved away (backups in `data/sd_backup_2026-11-01/`)
+  plus a full reboot, both work: `crash_reports/*_0100f2200c984000.log` names the functions, and `log.txt`
+  gets `=== CRASH ===` with a backtrace.
 - **Boot:** 2123-0011 came from `nn::err::ShowError` in `OnlineSystemGetEndpoints::FiberExecute` (main+0x1937890) after the
   endpoint lookup fails; the module skips that call. `system_dialogs.cpp` logs every SDK error dialog with its caller.

@@ -19,10 +19,9 @@ namespace nn::fs {
 // {mTopSection: [9 slots], mBottomSection: [1 slot]}, each slot {mAvailabilities: [{mReward: <loot
 // table>, mStartTime, mEndTime}]} (several availabilities = a quantity choice). Offline the module
 // hands MK11PremiumShop::Initialize its own catalogue of items the game also gives out for playing
-// (Towers of Time keys, Konsumables, materials), and a purchase charges Koins instead of Time Krystals:
-// MK11PremiumShop::PurchaseProduct builds an inventory batch {Exp_PremiumCurrency -cost, rewards}
-// whose currency request is swapped for Koins here; the batch is then applied like every other
-// offline batch. Nothing here creates or spends Time Krystals, and nothing paid is sold.
+// (Towers of Time keys, Konsumables, materials), priced in Time Krystals. MK11PremiumShop::PurchaseProduct
+// builds an inventory batch {Exp_PremiumCurrency -price, rewards}, which is applied like every other
+// offline batch (Time Krystals live in the offline wallet). Nothing paid is sold.
 
 using namespace mk11;
 
@@ -39,25 +38,25 @@ namespace {
     struct Offer {
         const char* slug;           // spendable item (currency loot items have no shop price)
         int amount[MaxChoices];     // 0 ends the list
-        int koins[MaxChoices];
+        int price[MaxChoices];      // Time Krystals
     };
 
     // Slots 0-8 are the top section, slot 9 the bottom one. sdmc:/mk11offline/store.txt replaces it.
     Offer s_Offers[TopSlots + BottomSlots] = {
-        { "PortalKoins1Key",     { 1, 5, 10 },  { 5000, 22500, 40000 } },
-        { "PortalSouls1Key",     { 1, 5, 10 },  { 5000, 22500, 40000 } },
-        { "PortalHearts1Key",    { 1, 5, 10 },  { 5000, 22500, 40000 } },
-        { "PortalXP1Key",        { 1, 5, 10 },  { 5000, 22500, 40000 } },
-        { "PortalForgeMatsKey",  { 1, 5, 10 },  { 5000, 22500, 40000 } },
-        { "PortalKollectorKey",  { 1, 5, 10 },  { 7500, 33750, 60000 } },
-        { "PortalFireKey",       { 1, 5, 10 },  { 7500, 33750, 60000 } },
-        { "Armor",               { 1, 5, 10 },  { 2000, 9000, 16000 } },
-        { "SkipFight",           { 1, 5, 10 },  { 2000, 9000, 16000 } },
-        { "SkeletonKey",         { 1, 5, 10 },  { 5000, 22500, 40000 } },
+        { "PortalKoins1Key",     { 1, 5, 10 },  { 10, 50, 100 } },
+        { "PortalSouls1Key",     { 1, 5, 10 },  { 10, 50, 100 } },
+        { "PortalHearts1Key",    { 1, 5, 10 },  { 10, 50, 100 } },
+        { "PortalXP1Key",        { 1, 5, 10 },  { 10, 50, 100 } },
+        { "PortalForgeMatsKey",  { 1, 5, 10 },  { 10, 50, 100 } },
+        { "PortalKollectorKey",  { 1, 5, 10 },  { 10, 50, 100 } },
+        { "PortalFireKey",       { 1, 5, 10 },  { 10, 50, 100 } },
+        { "Armor",               { 1, 5, 10 },  { 10, 50, 100 } },
+        { "SkipFight",           { 1, 5, 10 },  { 10, 50, 100 } },
+        { "SkeletonKey",         { 1, 5, 10 },  { 10, 50, 100 } },
     };
 
     // store.txt: one line per slot (the first 9 are the top section, the 10th the bottom one):
-    //   <item slug> <amount>:<koins> [<amount>:<koins> ...]
+    //   <item slug> <amount>:<price> [<amount>:<price> ...]
     // Used only when it has all 10 lines; slugs live in s_StoreText.
     char* s_StoreText = nullptr;
 
@@ -98,12 +97,12 @@ namespace {
                     char* colon = strchr(tok, ':');
                     if (!colon) continue;
                     offer.amount[c] = atoi(tok);
-                    offer.koins[c] = atoi(colon + 1);
-                    if (offer.amount[c] > 0 && offer.koins[c] > 0) c++;
+                    offer.price[c] = atoi(colon + 1);
+                    if (offer.amount[c] > 0 && offer.price[c] > 0) c++;
                     else offer.amount[c] = 0;
                 }
                 if (c) count++;
-                else Log("shop: store.txt: no amount:koins for %s", slug);
+                else Log("shop: store.txt: no amount:price for %s", slug);
             }
             line = next;
         }
@@ -129,9 +128,6 @@ namespace {
         s32 max;
     };
     constexpr size_t AvailabilitySize = 0x18;
-
-    // The offer a purchase is being made for (PurchaseProduct -> AddCurrencyRequest).
-    int s_ChargingKoins = -1;
 
     template<typename T>
     T& Global(ptrdiff_t offset) { return *reinterpret_cast<T*>(exl::util::modules::GetTargetStart() + offset); }
@@ -161,9 +157,8 @@ namespace {
     }
 
     // The loot JSON for `amount` of an offer's item, or false when the item does not exist.
-    // MK11PremiumShop::IsDataValid wants a non-zero premiumCurrencyPrice: it is set to the Koin price
-    // (the price actually charged comes from ShopCost / ShopPurchase).
-    bool RewardJson(const Offer& offer, int amount, int koins, char* out, size_t size) {
+    // premiumCurrencyPrice is the Time Krystal price (MK11PremiumShop::IsDataValid wants it non-zero).
+    bool RewardJson(const Offer& offer, int amount, int price, char* out, size_t size) {
         game::NRSString slug(offer.slug);
         auto def = game::Fn<const u8* (*)(const game::NRSString&)>(off::SpendableItemManager_GetItemDefinitionBySlug)(slug);
         if (!def) {
@@ -171,7 +166,7 @@ namespace {
             return false;
         }
         snprintf(out, size, "{\"name\":\"OfflineStore\",\"dropCount\":1,\"items\":[{\"LootItemType\":\"SpendableItemLootItem\",\"dropWeight\":1,\"id\":%u,\"amount\":%d,\"premiumCurrencyPrice\":%d}]}",
-                 *reinterpret_cast<const u32*>(def), amount, koins);
+                 *reinterpret_cast<const u32*>(def), amount, price);
         return true;
     }
 
@@ -195,7 +190,7 @@ namespace {
             const Offer& offer = s_Offers[slot];
             for (int c = 0; c < MaxChoices && offer.amount[c]; c++) {
                 char reward[384];
-                if (!RewardJson(offer, offer.amount[c], offer.koins[c], reward, sizeof(reward))) break;
+                if (!RewardJson(offer, offer.amount[c], offer.price[c], reward, sizeof(reward))) break;
                 n += snprintf(json + n, Size - n, "%s{\"mReward\":%s,\"mStartTime\":%s,\"mEndTime\":%s}",
                               c ? "," : "", reward, start, end);
             }
@@ -308,43 +303,13 @@ HOOK_DEFINE_TRAMPOLINE(ShopTickDownload) {
     }
 };
 
-// The price shown and checked is the Koin price; the Time Krystal balance check inside PurchaseProduct
-// sees 0 (s_ChargingKoins set).
-HOOK_DEFINE_TRAMPOLINE(ShopCost) {
-    static s32 Callback(const void* availability, void* user) {
-        int slot, choice;
-        if (Offline() && FindOffer(availability, &slot, &choice))
-            return s_ChargingKoins >= 0 ? 0 : s_Offers[slot].koins[choice];
-        return Orig(availability, user);
-    }
-};
-
 HOOK_DEFINE_TRAMPOLINE(ShopPurchase) {
     static game::HydraHandle Callback(void* user, const void* availability, game::NRSString* source) {
         int slot, choice;
-        if (!Offline() || !FindOffer(availability, &slot, &choice)) return Orig(user, availability, source);
-        const Offer& offer = s_Offers[slot];
-        int price = offer.koins[choice], koins = wallet::Get("Exp_Koins");
-        if (koins < price) {
-            Log("shop: %d %s costs %d Koins, only %d", offer.amount[choice], offer.slug, price, koins);
-            return {};
-        }
-        Log("shop: buying %d %s for %d Koins", offer.amount[choice], offer.slug, price);
-        s_ChargingKoins = price;
-        game::HydraHandle result = Orig(user, availability, source);
-        s_ChargingKoins = -1;
-        return result;
-    }
-};
-
-HOOK_DEFINE_TRAMPOLINE(BatchCurrency) {
-    static void Callback(void* batch, game::NRSString* slug, s32 amount, const void* context, const void* source) {
-        if (s_ChargingKoins >= 0 && slug && strcmp(slug->c_str(), "Exp_PremiumCurrency") == 0) {
-            game::NRSString koins("Exp_Koins");
-            Orig(batch, &koins, -s_ChargingKoins, context, source);
-            return;
-        }
-        Orig(batch, slug, amount, context, source);
+        if (Offline() && FindOffer(availability, &slot, &choice))
+            Log("shop: buying %d %s for %d Time Krystals (have %d)", s_Offers[slot].amount[choice], s_Offers[slot].slug,
+                s_Offers[slot].price[choice], wallet::Get("Exp_PremiumCurrency"));
+        return Orig(user, availability, source);
     }
 };
 
@@ -367,6 +332,70 @@ HOOK_DEFINE_TRAMPOLINE(ShopCharacterLocked) {
     }
 };
 
+// LootTable::ApplyRulesToAllItems only ever clears items' enabled flags (IRandomLootDrop+12 bit 0), so
+// once another screen has run inventory rules over an offline offer's loot table its only item stays
+// disabled: the purchase then rolls nothing and the page has no description to show. Offline offers are
+// repeatable spendables, so their items are enabled again after every rule pass.
+namespace {
+    bool IsOfferTable(const void* table) {
+        const ProductArray* sections[] = { &Global<ProductArray>(off::MK11PremiumShop_sFeaturedItems),
+                                           &Global<ProductArray>(off::MK11PremiumShop_sDailyItems) };
+        for (const ProductArray* products : sections)
+            for (s32 p = 0; p < products->num; p++)
+                for (s32 a = 0; a < products->data[p].num; a++)
+                    if (*reinterpret_cast<void* const*>(products->data[p].availabilities + a * AvailabilitySize) == table)
+                        return true;
+        return false;
+    }
+}
+
+HOOK_DEFINE_TRAMPOLINE(ShopLootRules) {
+    static void Callback(u8* table, void* user, void* rules) {
+        Orig(table, user, rules);
+        if (!IsOfferTable(table) || !Offline()) return;
+        u8** items = *reinterpret_cast<u8***>(table + 0x30);
+        s32 count = *reinterpret_cast<s32*>(table + 0x38);
+        for (s32 i = 0; i < count; i++) items[i][12] |= 1;
+    }
+};
+
+// The grid and the product panel show line 0 of a product's loot description without checking that
+// there is one. LootTable::GetDescription lists only the items its rules leave enabled, and the enabled
+// flags are whatever the last rule pass over that table left (other screens run inventory rules on it),
+// so an offline offer's single item is sometimes missing and the page closes the game. Offline offers
+// are always available, so an empty description is filled from the items themselves.
+namespace {
+    struct DescriptionLines {
+        void* data;
+        s32 num;
+        s32 max;
+        bool condensed;
+    };
+    static_assert(sizeof(DescriptionLines) == 0x18);
+}
+
+HOOK_DEFINE_TRAMPOLINE(ShopDescription) {
+    static DescriptionLines Callback(const Product* product) {
+        DescriptionLines lines = Orig(product);
+        int slot, choice;
+        if (lines.num > 0 || !Offline() || product->num < 1 || !FindOffer(product->availabilities, &slot, &choice))
+            return lines;
+        // MK11PremiumShopAvailability::mReward (the loot table): items at +0x30, count at +0x38;
+        // IRandomLootDrop::GetDescription(FGUserEntity*, LootItemDescriptionLines*) is vtable slot 6.
+        u8* table = *reinterpret_cast<u8**>(product->availabilities);
+        void** items = *reinterpret_cast<void***>(table + 0x30);
+        s32 count = *reinterpret_cast<s32*>(table + 0x38);
+        for (s32 i = 0; i < count; i++) {
+            auto describe = (*reinterpret_cast<void (***)(void*, void*, DescriptionLines*)>(items[i]))[6];
+            describe(items[i], User(), &lines);
+        }
+        static bool s_Logged = false;
+        if (!s_Logged) Log("shop: %s had no description, %d line(s) from its items", s_Offers[slot].slug, lines.num);
+        s_Logged = true;
+        return lines;
+    }
+};
+
 HOOK_DEFINE_TRAMPOLINE(StoreMenu) {
     static void Callback(void* vm) {
         static bool s_Decided = false;
@@ -386,11 +415,11 @@ namespace mk11::shop {
         ShopTickDownload::InstallAtOffset(off::MK11PremiumShop_TickDownload);
         ShopHasPurchased::InstallAtOffset(off::MK11PremiumShopAvailability_HasPurchased);
         ShopCharacterLocked::InstallAtOffset(off::MK11PremiumShopAvailability_IsCharacterLocked);
-        ShopCost::InstallAtOffset(off::MK11PremiumShopAvailability_GetPremiumCurrencyCost);
+        ShopLootRules::InstallAtOffset(off::LootTable_ApplyRulesToAllItems);
+        ShopDescription::InstallAtOffset(off::MK11PremiumShopProduct_GetLootItemDescriptionLines);
         ShopPurchase::InstallAtOffset(off::MK11PremiumShop_PurchaseProduct);
-        BatchCurrency::InstallAtOffset(off::FGOnlineInventoryBatch_AddCurrencyRequest);
         // Main menu ZR opens the Kombat Feed without the Nintendo Account / reconnect checks only with
-        // offline_store=1 (StoreMenu, once the SD card settings can be read).
+        // offline_store=1, the default (StoreMenu, once the SD card settings can be read).
         StoreMenu::InstallAtOffset(off::MKS_MainMenu_KombatFeedModalLoop);
         // Premium Shop page: FGOnlineCheck::CheckRestrictions -> 7 (no restriction).
         exl::patch::CodePatcher(off::PremiumShop_CheckRestrictionsCall).Write<u32>(0x528000e0);  // mov w0, #7

@@ -16,13 +16,15 @@ namespace mk11::config {
         int s_TopUp = 0;
         bool s_ApplyGear = false;
         bool s_SkipTowerCredits = true;
-        bool s_OfflineStore = false;
+        bool s_OfflineStore = true;
+        int s_ChestKrystals = 10;
 
         void Apply(const char* key, const char* value) {
             if (strcmp(key, "krypt_currency_topup") == 0) s_TopUp = atoi(value);
             else if (strcmp(key, "apply_gear_rewards") == 0) s_ApplyGear = atoi(value) != 0;
             else if (strcmp(key, "skip_tower_credits") == 0) s_SkipTowerCredits = atoi(value) != 0;
             else if (strcmp(key, "offline_store") == 0) s_OfflineStore = atoi(value) != 0;
+            else if (strcmp(key, "krypt_chest_krystals") == 0) s_ChestKrystals = atoi(value);
         }
 
         void Load() {
@@ -54,8 +56,8 @@ namespace mk11::config {
                 }
                 line = next;
             }
-            Log("config: krypt_currency_topup=%d apply_gear_rewards=%d skip_tower_credits=%d offline_store=%d", s_TopUp, s_ApplyGear,
-                s_SkipTowerCredits, s_OfflineStore);
+            Log("config: krypt_currency_topup=%d apply_gear_rewards=%d skip_tower_credits=%d offline_store=%d krypt_chest_krystals=%d", s_TopUp,
+                s_ApplyGear, s_SkipTowerCredits, s_OfflineStore, s_ChestKrystals);
         }
     }
 
@@ -72,6 +74,11 @@ namespace mk11::config {
     bool OfflineStore() {
         if (!s_Loaded) Load();
         return s_OfflineStore;
+    }
+
+    int KryptChestKrystals() {
+        if (!s_Loaded) Load();
+        return s_ChestKrystals;
     }
 
     bool SkipTowerCredits() {

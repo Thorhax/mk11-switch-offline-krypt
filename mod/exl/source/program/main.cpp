@@ -29,8 +29,9 @@
 //  Wallet: MK11 keeps no offline balance for Koins, Souls, Hearts or player/character/gear XP (their
 //    offline profile stats stay 0), so while there is no Hydra connection their ExperienceView value lives in
 //    krypt_store. Crafting materials and Konsumables (SpendableItemInventory) are kept only in
-//    the Hydra inventory, so offline their counts live in krypt_store as well. Time Krystals
-//    (Exp_PremiumCurrency) are never touched.
+//    the Hydra inventory, so offline their counts live in krypt_store as well. So do Time Krystals
+//    (Exp_PremiumCurrency): earned from level-ups and Krypt chests (krypt_chest_krystals), spent in the
+//    offline Store.
 //  Optional: config.ini krypt_currency_topup=N tops Koins/Souls/Hearts up to N on Krypt start.
 
 using namespace mk11;
@@ -274,7 +275,7 @@ namespace {
     // the wallet totals of the Koins / Souls / Hearts the batch changed (already applied), and for
     // experience types (player, character and gear XP) the current value plus what the batch awards. The
     // game commits these through ExperienceView::OnInventoryUpdated, which offline stores XP in the profile
-    // stats. Time Krystals are never included.
+    // stats.
     char* BatchReply(void* user, const char* body) {
         json::Value* root = json::Parse(body);
         json::Value* list = json::Find(root, "rewards.inc_consumable");
@@ -286,7 +287,7 @@ namespace {
         bool first = true;
         for (size_t i = 0; i < json::Count(list); i++) {
             const char* slug = json::String(json::Find(json::At(list, i), "item_slug"));
-            if (!slug || !strcmp(slug, "Exp_PremiumCurrency")) continue;
+            if (!slug) continue;
             char quoted[96];
             snprintf(quoted, sizeof(quoted), "\"%s\"", slug);
             if (strstr(out, quoted)) continue;  // already listed

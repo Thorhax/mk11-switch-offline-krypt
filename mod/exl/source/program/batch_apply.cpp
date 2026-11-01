@@ -14,11 +14,10 @@ namespace mk11::wallet {
         void Key(char* out, size_t size, const char* slug) { snprintf(out, size, "wallet/%s", slug); }
     }
 
-    // Every experience value: Koins, Souls, Hearts, and player / character / gear XP (Exp_Player,
-    // Exp_<Character>, Exp_ItemProgression), none of which the game keeps offline. Never Time Krystals.
-    bool Manages(const char* slug) {
-        return strncmp(slug, "Exp_", 4) == 0 && strcmp(slug, "Exp_PremiumCurrency") != 0;
-    }
+    // Every experience value: Koins, Souls, Hearts, Time Krystals (Exp_PremiumCurrency) and player /
+    // character / gear XP (Exp_Player, Exp_<Character>, Exp_ItemProgression), none of which the game keeps
+    // offline.
+    bool Manages(const char* slug) { return strncmp(slug, "Exp_", 4) == 0; }
 
     bool ManagesSpendable(const char* slug) { return strncmp(slug, "Exp_", 4) != 0; }
 
@@ -107,6 +106,24 @@ namespace mk11::batch {
             }
             wallet::Set(slug, wallet::Get(slug) + (int)amount);
         });
+
+        // Krypt chests (a Krypt batch that spends Koins, Hearts or Souls; the Forge's are marked
+        // "source_detail":"KRYPT_FORGE") also give krypt_chest_krystals Time Krystals.
+        int krystals = config::KryptChestKrystals();
+        if (krystals > 0 && strstr(json, "\"source\":\"KRYPT\"") && !strstr(json, "\"source_detail\":\"KRYPT_")) {
+            bool chest = false;
+            ForEachObject(json, "inc_consumable", [&](const char* o, const char* e) {
+                char slug[64];
+                long long amount = 0;
+                if (StringField(o, e, "item_slug", slug, sizeof(slug)) && IntField(o, e, "inc_amount", &amount) && amount < 0 &&
+                    (!strcmp(slug, "Exp_Koins") || !strcmp(slug, "Exp_BrutalityHearts") || !strcmp(slug, "Exp_SoulFragments")))
+                    chest = true;
+            });
+            if (chest) {
+                Log("batch: Krypt chest bonus %d Time Krystals", krystals);
+                wallet::Set("Exp_PremiumCurrency", wallet::Get("Exp_PremiumCurrency") + krystals);
+            }
+        }
 
         void* user = game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1);
         void* unlockables = reinterpret_cast<void*>(exl::util::modules::GetTargetStart() + off::GMK11Unlockables);

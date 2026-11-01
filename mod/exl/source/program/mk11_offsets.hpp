@@ -169,6 +169,8 @@ namespace mk11::off {
     constexpr ptrdiff_t KombatFeedModalDriver_EnterPremiumShop = 0x20d5544; // KombatFeedModalDriver::EnterPremiumShop()
     constexpr ptrdiff_t MK11PremiumShopAvailability_HasPurchased = 0x21b0bd4; // MK11PremiumShopAvailability::HasPurchased() const
     constexpr ptrdiff_t MK11PremiumShopAvailability_IsCharacterLocked = 0x21b0cd8; // MK11PremiumShopAvailability::IsCharacterLocked() const
+    constexpr ptrdiff_t MK11PremiumShopProduct_GetLootItemDescriptionLines = 0x21b11dc; // MK11PremiumShopProduct::GetLootItemDescriptionLines() const
+    constexpr ptrdiff_t LootTable_ApplyRulesToAllItems = 0x23169b4; // LootTable::ApplyRulesToAllItems(FGUserEntity*, TIndirectArray<LootTableRule, 8u, NRS::DefaultContainerAllocator>*)
     constexpr ptrdiff_t GSlotFileManager = 0xa9440b0; // GSlotFileManager
     constexpr ptrdiff_t SlotFileManager_IsSlotLoading = 0x18067f4; // SlotFileManager::IsSlotLoading(int)
     constexpr ptrdiff_t LoadScreenAsync = 0x17bd5a0; // LoadScreenAsync(char const*, int)
