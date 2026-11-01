@@ -25,24 +25,8 @@ namespace {
     }
 }
 
-namespace {
-    // Research: the stat names GetStatId knows (FName table at main+0xbe7d9d8, 745 entries).
-    void DumpStatNames() {
-        static bool done = false;
-        if (done) return;
-        done = true;
-        const u64* names = reinterpret_cast<const u64*>(exl::util::modules::GetTargetStart() + 0xbe7d9d8);
-        for (int i = 0; i < 745; i++) {
-            game::NRSString text;
-            game::Fn<void (*)(const u64*, game::NRSString*)>(off::FName_ToString)(&names[i], &text);
-            Log("stat %d %s", i, text.c_str());
-        }
-    }
-}
-
 HOOK_DEFINE_TRAMPOLINE(CheckForDrones) {
     static void Callback() {
-        DumpStatNames();
         if (config::P1Cpu()) {
             u8* player = Player1();
             void* pad = player ? *reinterpret_cast<void**>(player + PlayerGamepad) : nullptr;
