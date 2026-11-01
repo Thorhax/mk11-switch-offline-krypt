@@ -204,6 +204,57 @@ HOOK_DEFINE_TRAMPOLINE(CharacterLocked) {
     }
 };
 
+// Finishers: the game has no victim data for the extra fighters (they were only ever fought in Story Mode),
+// e.g. a Brutality on Cyrax closed the game while setting up his ragdoll. Fatalities, stage fatalities
+// and Brutalities are therefore off in fights with one of them; Fatal Blows work.
+namespace {
+    constexpr ptrdiff_t GameInfoRef = 0xab81c18;  // -> FGGameInfo*
+
+    bool ExtraInFight() {
+        void* gameInfo = **reinterpret_cast<void** const*>(exl::util::modules::GetTargetStart() + GameInfoRef);
+        if (!gameInfo) return false;
+        for (s32 player = 0; player < 2; player++) {
+            void* info = game::Fn<void* (*)(void*, s32)>(off::FGGameInfo_GetPlayerInfo)(gameInfo, player);
+            void* fighter = info ? game::Fn<void* (*)(void*, u32)>(off::PLAYER_INFO_GetActiveFGCharacterObj)(info, 1) : nullptr;
+            const void* def = fighter ? game::Fn<const void* (*)(void*)>(off::FGCharacterObj_GetCurrentCharacterDefinition)(fighter) : nullptr;
+            if (def && IsExtra(static_cast<const game::NRSString*>(def)->c_str())) return true;
+        }
+        return false;
+    }
+
+    void LogBlocked(const char* what) {
+        static int s_Logged = 0;
+        if (s_Logged++ < 20) Log("roster: %s blocked (extra fighter in the fight)", what);
+    }
+}
+
+HOOK_DEFINE_TRAMPOLINE(BrutalityAllowed) {
+    static bool Callback(const void* attacker, const void* victim) {
+        if (!Orig(attacker, victim)) return false;
+        if (!ExtraInFight()) return true;
+        LogBlocked("Brutality");
+        return false;
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(FatalityAvailable) {
+    static bool Callback() {
+        if (!Orig()) return false;
+        if (!ExtraInFight()) return true;
+        LogBlocked("Fatality");
+        return false;
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(StageFatalityAvailable) {
+    static bool Callback(void* fighter) {
+        if (!Orig(fighter)) return false;
+        if (!ExtraInFight()) return true;
+        LogBlocked("Stage fatality");
+        return false;
+    }
+};
+
 // UI images are texture objects found by name (UIImageElement::SetTextureDecodeAsync -> StaticFindObject)
 // and decompressed without a null check, so an image that does not exist (the extra fighters have no
 // versus art) closes the game. Missing images are skipped instead.
@@ -247,6 +298,9 @@ namespace mk11::roster {
         ScreenCtor::InstallAtOffset(off::UIPlayerSelectModuleScreen_Ctor);
         CharacterLocked::InstallAtOffset(off::FGGameInfo_GetIsCharacterLocked);
         ImageDecode::InstallAtOffset(off::UIImageElement_SetTextureDecodeAsync);
+        BrutalityAllowed::InstallAtOffset(off::IsBrutalityAllowed);
+        FatalityAvailable::InstallAtOffset(off::IsFatalityAvailable);
+        StageFatalityAvailable::InstallAtOffset(off::IsBackgroundFatalityAvailable);
         FailAssert::InstallAtOffset(off::NRS_FailAssert);
     }
 }

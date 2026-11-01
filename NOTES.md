@@ -67,6 +67,7 @@ krypt_currency_topup=0   # >0: top Koins/Souls/Hearts up to this amount on each 
 apply_gear_rewards=1     # grant gear/augments from Krypt chests locally
 offline_store=1          # Store (ZR) with the offline catalogue
 krypt_chest_krystals=10  # Time Krystals per Krypt chest opened (0 = off)
+p1_cpu=0                 # 1: player 1 is CPU-controlled in every fight (CPU vs CPU, testing)
 ```
 
 ## How it works
@@ -224,9 +225,18 @@ Item notes:
   unlocked for them (they have no character content entry) unless a user is connected to Hydra.
 - Missing UI images used to close the game (`UIImageElement::SetTextureDecodeAsync` decompresses a null
   texture); they are now skipped and logged ("no image ...").
+- Finishers: a Brutality on Cyrax closed the game (MKObj::AssignAndInitRagdoll in Sub-Zero's brutality: no victim
+  data for him). `IsBrutalityAllowed`, `IsFatalityAvailable` and `IsBackgroundFatalityAvailable` return false
+  while one of the three is fighting; Fatal Blows work. Klassic Tower with Cyrax (AI, p1_cpu): four fights and
+  the Kronika boss fight run (2026-11-01).
 - Keys: `CYR`, `SEK`, `KRO`. Fighting them via a swapped selection showed the selection has to change at
   `CharacterDefinition::SetCharacter` time (swapping at `PLAYER_INFO` left Sub-Zero's intro assets requested).
 - `NRS::FailAssert` is hooked to log assert messages (e.g. "Unable to load file X, failed to find import: Y").
+
+## Player 1 as CPU (autoplay.cpp, `p1_cpu=1`)
+- Fight scripts call `FGAIGameInterface::CheckForDrones` at round start; it turns every player whose
+  `PLAYER_INFO` +56 bit 0 is set into an AI drone (`TurnPlayerIntoDrone`). The hook sets that bit for player 1.
+  Works in local versus and Klassic Towers (including the Kronika boss setup).
 
 ## Tooling
 

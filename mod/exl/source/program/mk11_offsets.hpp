@@ -187,4 +187,11 @@ namespace mk11::off {
     constexpr ptrdiff_t UIImageElement_SetTextureDecodeAsync = 0x17baf58; // UIImageElement::SetTextureDecodeAsync(char const*, unsigned int)
     constexpr ptrdiff_t PathUtils_GetBaseFilename = 0x110ed14; // PathUtils::GetBaseFilename(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, int)
     constexpr ptrdiff_t UObject_StaticFindObject = 0x10fcaac; // UObject::StaticFindObject(UClass const*, UObject*, char const*, int)
+    constexpr ptrdiff_t FGGameInfo_GetPlayerInfo = 0x2059d38; // FGGameInfo::GetPlayerInfo(PLAYER_NUM)
+    constexpr ptrdiff_t PLAYER_INFO_GetActiveFGCharacterObj = 0x2495b0c; // PLAYER_INFO::GetActiveFGCharacterObj(unsigned int)
+    constexpr ptrdiff_t FGCharacterObj_GetCurrentCharacterDefinition = 0x2422cb0; // FGCharacterObj::GetCurrentCharacterDefinition() const
+    constexpr ptrdiff_t IsBrutalityAllowed = 0x2467e64; // IsBrutalityAllowed(FGCharacterObj const*, FGCharacterObj const*)
+    constexpr ptrdiff_t IsFatalityAvailable = 0x2467c80; // IsFatalityAvailable()
+    constexpr ptrdiff_t IsBackgroundFatalityAvailable = 0x1fd4824; // IsBackgroundFatalityAvailable(MK11CharacterObj*)
+    constexpr ptrdiff_t FGAIGameInterface_CheckForDrones = 0x23b67ec; // FGAIGameInterface::CheckForDrones()
 }

@@ -15,4 +15,6 @@ namespace mk11::config {
     bool OfflineStore();
     // Time Krystals given for each Krypt chest opened (krypt_chest_krystals, default 10; 0 = off).
     int KryptChestKrystals();
+    // Player 1 is fought by the CPU in every fight (p1_cpu=1): CPU vs CPU matches, and testing.
+    bool P1Cpu();
 }
