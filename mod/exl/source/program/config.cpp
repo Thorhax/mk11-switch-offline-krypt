@@ -19,6 +19,7 @@ namespace mk11::config {
         bool s_OfflineStore = true;
         int s_ChestKrystals = 10;
         bool s_P1Cpu = false;
+        bool s_DailyChallenges = false;
 
         void Apply(const char* key, const char* value) {
             if (strcmp(key, "krypt_currency_topup") == 0) s_TopUp = atoi(value);
@@ -27,6 +28,7 @@ namespace mk11::config {
             else if (strcmp(key, "offline_store") == 0) s_OfflineStore = atoi(value) != 0;
             else if (strcmp(key, "krypt_chest_krystals") == 0) s_ChestKrystals = atoi(value);
             else if (strcmp(key, "p1_cpu") == 0) s_P1Cpu = atoi(value) != 0;
+            else if (strcmp(key, "daily_challenges") == 0) s_DailyChallenges = atoi(value) != 0;
         }
 
         void Load() {
@@ -76,6 +78,11 @@ namespace mk11::config {
     bool OfflineStore() {
         if (!s_Loaded) Load();
         return s_OfflineStore;
+    }
+
+    bool DailyChallenges() {
+        if (!s_Loaded) Load();
+        return s_DailyChallenges;
     }
 
     bool P1Cpu() {

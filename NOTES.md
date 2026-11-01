@@ -20,6 +20,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize |
 | Time Krystals | On-console wallet (`wallet/Exp_PremiumCurrency`): earned from player level-ups (as in the normal game) and Krypt chests (`krypt_chest_krystals`, default 10 per chest), spent in the Store |
 | Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01), invisible cells (no art in the game) |
+| Kombat Kard (ZL) | Opens offline (2026-11-01): wallet, Kareer Stats, notifications |
 | Store (ZR) | Works offline (2026-11-01): 10 earnable items, 10 Time Krystals each by default, `store.txt` to change |
 | Boot error 2123-0011 | Removed: the ShowError call in OnlineSystemGetEndpoints::FiberExecute is skipped |
 | "Unable to sync your online inventory" (Kustomize, fights) | Removed: the Yes/No boxes are answered Yes without being shown |
@@ -256,6 +257,24 @@ Item notes:
 - The pause menu's Quick Reference box is the quick move list (`SetLocalizedQuickMove(row, nameKey, input, player,
   …)`, rows at screen +0x200 / +0x250 per player, name in "FocusText0.Text" under the path at +808): it shows
   the fighter's special moves (fighter found from the player's character definition). Tested: Cyrax.
+
+## Kombat Kard and Daily Challenges (daily.cpp)
+- ZL opens `PlayerProfileModalDriver::RunInputLoop`, which loads the Nintendo network service account data
+  (`OnlineNX64UserData::LoadNSAData`, fails offline: "You must be connected...") and then waits on "Connecting to
+  server..." until `OnlineHydra::IsConnected`. Both are passed offline (main+0x20cb494 tbz -> nop; main+0x20cb620
+  `mov w22, w0` -> `mov w22, #1`). Kareer Stats show the local history.
+- Daily Challenges (experimental, `daily_challenges=1`): Hydra's `daily_challenge_get` entries are
+  `{id, data: {type, key, current, goal, data: {goal, currencyType (1 Koins, 4 Souls, 5 Hearts), currencyAmount,
+  stars, category | awardOnWinOnly}}}`; types DailyOnlineFightingStatChallengeInfo / ProfileStat / PlayAsChar, key a
+  stat name (745 names: data/stat_names.txt). The module builds three a day and creates them as the reply handler
+  does (`DailyChallengeGOSData` + `CreateChallengesForUser`); `daily_challenge_update` / `daily_challenge_reward`
+  posts are answered locally (progress in krypt.dat `daily/<id>`, reward batch applied). Stats with challenge
+  text: TOTAL_SPECIALS_USED, KRUSHING_BLOWS_PERFORMED, TOTAL_SUPERMOVES, TOTAL_THROWS, TOTAL_UPPERCUTS,
+  TOTAL_BRUTALITIES, TOTAL_FATALITIES ("BUG_ME": TOTAL_WINS, TOTAL_FLAWLESS_ROUNDS, TOTAL_COMBOS,
+  TOTAL_JUMP_ATTACKS, TOTAL_PROJECTILES_FIRED as fighting stats).
+- **Open:** the challenges show and are checked at the end of every match (`UpdateChallenges` ->
+  `ChallengeInfoUpdate`), but the stats read stay 0 offline (`BaseFightingStats::GetTotalOfScalar`, even
+  PLAYER_DAMAGE_TAKEN; profile stat challenges do not move either), so nothing progresses. Hence off by default.
 
 ## Tooling
 

@@ -15,6 +15,7 @@
 #include "roster.hpp"
 #include "autoplay.hpp"
 #include "movelist.hpp"
+#include "daily.hpp"
 #include "system_dialogs.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -344,6 +345,8 @@ HOOK_DEFINE_TRAMPOLINE(InventoryPost) {
 HOOK_DEFINE_TRAMPOLINE(HydraPost) {
     static game::HydraHandle Callback(const void* userHandle, const game::NRSString* endpoint, const game::OnlineValueHandle* body,
                                       const void* done, bool flag) {
+        game::HydraHandle daily;
+        if (endpoint && daily::AnswerPost(endpoint->c_str(), body, done, &daily)) return daily;
         if (!s_AnswerBatchPost) return Orig(userHandle, endpoint, body, done, flag);
         s_AnswerBatchPost = false;
         char* bodyText = nullptr;
@@ -546,6 +549,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     roster::Install();
     autoplay::Install();
     movelist::Install();
+    daily::Install();
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);
     MoviePlay::InstallAtOffset(off::MoviePlayer_Movie_Play);

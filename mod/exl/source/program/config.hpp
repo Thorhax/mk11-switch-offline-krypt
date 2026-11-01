@@ -17,4 +17,6 @@ namespace mk11::config {
     int KryptChestKrystals();
     // Player 1 is fought by the CPU in every fight (p1_cpu=1): CPU vs CPU matches, and testing.
     bool P1Cpu();
+    // Offline Daily Challenges on the Kombat Kard (daily_challenges=1; experimental, progress is not counted yet).
+    bool DailyChallenges();
 }
