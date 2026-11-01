@@ -151,6 +151,11 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
   commits them with the record. Before this fix the reward was dropped; the missed Chittering Treasures reward
   (62,500 Koins + D'Vorah True Bug / Kollector Mercenary skins) was replayed via `replay_batch.json` and
   verified in game 2026-11-01.
+- Gear reward pop-ups in the Krypt: `UnlockTracker::AddUnlockMessageFromOnlinePayload(payload, group, bool)`
+  shows an `Equipment` unlockTracker entry from the matching server-made instance in `rewards.items`; only when
+  the bool is set does it fall back to building the gear from the entry's GUID (Story fights pass true). Our reply's
+  `items` is empty, and `KryptExecuteStoreTrade` (Kollector) and `ProcessPendingServerRewardRequest` (chests,
+  vases) pass false, so gear was granted without a pop-up. Both call sites now pass true (2026-11-01).
 - Credits: the two credits movies in `BasicLadder_PlayLadderEnding` are skipped by making `Movie_Play` report
   failure for those call sites.
 - exlaunch's trampoline pool holds 200 bytes per hook; `JitSize` was raised to 0x4000. Module code

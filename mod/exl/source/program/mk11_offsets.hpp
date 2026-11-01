@@ -222,4 +222,6 @@ namespace mk11::off {
     constexpr ptrdiff_t DailyChallengeSystem_CreateChallengesForUser = 0x2521010; // DailyChallengeSystem::CreateChallengesForUser(FGUserEntity*, DailyChallengeGOSData&)
     constexpr ptrdiff_t DailyChallengeObject_DailyChallengeUpdate = 0x1e289a4; // DailyChallengeObject::DailyChallengeUpdate(PLAYER_INFO*)
     constexpr ptrdiff_t UITowersMainScreen_StartScreen = 0x1ee8b00; // UITowersMainScreen::StartScreen()
+    constexpr ptrdiff_t KollectorTradeUnlockPayloadArg = 0x214bfd8;
+    constexpr ptrdiff_t KryptRewardUnlockPayloadArg = 0x212b3a4;
 }

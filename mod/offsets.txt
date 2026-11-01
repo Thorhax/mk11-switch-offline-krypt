@@ -258,3 +258,8 @@ DailyChallengeGOSData_FromJsonString = DailyChallengeGOSData::FromJsonString(NRS
 DailyChallengeSystem_CreateChallengesForUser = DailyChallengeSystem::CreateChallengesForUser(FGUserEntity*, DailyChallengeGOSData&)
 DailyChallengeObject_DailyChallengeUpdate = DailyChallengeObject::DailyChallengeUpdate(PLAYER_INFO*)
 UITowersMainScreen_StartScreen = UITowersMainScreen::StartScreen()
+# UnlockTracker::AddUnlockMessageFromOnlinePayload(payload, group, bool) in KryptExecuteStoreTrade (Kollector)
+# and MK11Krypt::ProcessPendingServerRewardRequest (chests, vases): the bool lets gear rewards that have no
+# server-made instance in rewards.items show from their GUID (as Story fights do).
+KollectorTradeUnlockPayloadArg = 0x214bfd8
+KryptRewardUnlockPayloadArg = 0x212b3a4

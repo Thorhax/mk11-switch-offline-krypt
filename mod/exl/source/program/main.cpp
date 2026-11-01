@@ -571,6 +571,10 @@ extern "C" void exl_main(void* x0, void* x1) {
     // ...so the "you will not receive your rewards until you reconnect" box is wrong: skip it.
     for (ptrdiff_t call : { off::StoryOfflineWarningCall, off::StoryOfflineWarningCall2 })
         exl::patch::CodePatcher(call).Write<u32>(0xd503201f);                                  // nop
+    // Krypt reward pop-ups: our reply carries no server-made gear in rewards.items, so let gear (Kollector
+    // trades, chests) show from the unlockTracker GUID instead of being left out.
+    for (ptrdiff_t arg : { off::KollectorTradeUnlockPayloadArg, off::KryptRewardUnlockPayloadArg })
+        exl::patch::CodePatcher(arg).Write<u32>(0x52800023);                                  // mov w3, #1
     KryptCleanup::InstallAtOffset(off::MK11Krypt_CleanupKryptCommon);
     KryptDestroy::InstallAtOffset(off::MK11Krypt_Dtor);
 
