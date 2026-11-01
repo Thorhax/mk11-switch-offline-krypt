@@ -4,6 +4,7 @@
 #include "movelist.hpp"
 #include <cctype>
 #include <cstring>
+#include <strings.h>
 
 // The pause menu move list for Cyrax, Sektor and Kronika, whose move list data is a "PLACEHOLDER" line.
 //
@@ -14,6 +15,8 @@
 // Move names go through the localisation table (unknown keys read "BUG_ME"), so the name label is set to the
 // text afterwards. The script still believes the page has its one placeholder line: its later headers and
 // blank lines for the rows written here are dropped, and its cursor stays on the first move.
+// The pause menu's Quick Reference box (the quick move list, SetLocalizedQuickMove per row and player) shows
+// their special moves the same way.
 
 using namespace mk11;
 
@@ -84,6 +87,22 @@ namespace {
     };
 
     const Fighter* s_Fighter = nullptr;  // the move list being shown is one of them
+
+    constexpr ptrdiff_t GameInfoRef = 0xab81c18;  // -> FGGameInfo*
+
+    // The fighter player `player` is playing, when it is one of them.
+    const Fighter* FighterOf(u32 player) {
+        void* gameInfo = **reinterpret_cast<void** const*>(exl::util::modules::GetTargetStart() + GameInfoRef);
+        void* info = gameInfo ? game::Fn<void* (*)(void*, s32)>(off::FGGameInfo_GetPlayerInfo)(gameInfo, player) : nullptr;
+        void* obj = info ? game::Fn<void* (*)(void*, u32)>(off::PLAYER_INFO_GetActiveFGCharacterObj)(info, 1) : nullptr;
+        const void* def = obj ? game::Fn<const void* (*)(void*)>(off::FGCharacterObj_GetCurrentCharacterDefinition)(obj) : nullptr;
+        if (!def) return nullptr;
+        const char* name = static_cast<const game::NRSString*>(def)->c_str();  // "char_cyrax"
+        if (strncasecmp(name, "char_", 5) != 0) return nullptr;
+        for (const Fighter& f : Fighters)
+            if (strcasecmp(name + 5, f.name) == 0) return &f;
+        return nullptr;
+    }
 
     // UIMoveListScreen: move grid widget handle at +0xa8; element paths (NRS strings) of a move's name label at
     // +728 and of a header's label at +760.
@@ -159,6 +178,42 @@ HOOK_DEFINE_TRAMPOLINE(Header) {
 };
 
 
+// Quick move list rows: widgets at +0x200 (player 0) / +0x250 (others) + row * 8, up to QuickRows; the name is
+// the row's "FocusText0.Text" under the element path at +808.
+namespace {
+    constexpr int QuickRows = 10;
+    constexpr ptrdiff_t QuickRowPath = 808;
+
+    void SetQuickName(u8* screen, int row, u32 player, const wchar_t* name) {
+        void* widget = *reinterpret_cast<void**>(screen + (player == 0 ? 0x200 : 0x250) + row * 8);
+        const auto* path = reinterpret_cast<const game::NRSString*>(screen + QuickRowPath);
+        void* element = widget ? game::Fn<void* (*)(void*, const char*)>(off::UIContainerWidget_GetElement)(widget, path->c_str()) : nullptr;
+        if (element) game::Fn<void (*)(void*, const char*, const void*)>(off::SetStaticTextMKString)(element, "FocusText0.Text", name);
+    }
+}
+
+HOOK_DEFINE_TRAMPOLINE(QuickBlank) {
+    static void Callback(void* screen, int row, u32 player) {
+        const Fighter* f = FighterOf(player);
+        if (f && row < f->pages[2].count) return;
+        Orig(screen, row, player);
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(QuickMove) {
+    static void Callback(void* screen, int row, const char* name, const void* input, u32 player, bool locked, void* pad) {
+        const Fighter* f = FighterOf(player);
+        if (!f) return Orig(screen, row, name, input, player, locked, pad);
+        if (row != 0) return;  // placeholder lines; the whole list is written with row 0
+        const Page& specials = f->pages[2];
+        for (int i = 0; i < specials.count && i < QuickRows; i++) {
+            Orig(screen, i, "", specials.moves[i].input, player, false, pad);
+            SetQuickName(static_cast<u8*>(screen), i, player, specials.moves[i].name);
+        }
+        for (int i = specials.count; i < QuickRows; i++) QuickBlank::Orig(screen, i, player);
+    }
+};
+
 namespace mk11::movelist {
     void Install() {
         CharName::InstallAtOffset(off::UIMoveListScreen_SetLocalizedCharName);
@@ -166,5 +221,7 @@ namespace mk11::movelist {
         MoveRow::InstallAtOffset(off::UIMoveListScreen_SetLocalizedMove);
         Header::InstallAtOffset(off::UIMoveListScreen_SetLocalizedHeader);
         Blank::InstallAtOffset(off::UIMoveListScreen_SetBlankLine);
+        QuickMove::InstallAtOffset(off::UIMoveListScreen_SetLocalizedQuickMove);
+        QuickBlank::InstallAtOffset(off::UIMoveListScreen_SetQuickMoveBlankLine);
     }
 }

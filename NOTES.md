@@ -239,8 +239,11 @@ Item notes:
   Works in local versus and Klassic Towers (including the Kronika boss setup).
 - Player 1's controller stays with the AI drone after the match, so the menus after it ignore the controller.
   It is handed back (`FGAIGameInterface::TurnDroneIntoPlayer`) at `UIFightHUD::BuildOnEndOfMatchFade`; doing it at
-  `AIFighterInfo::TurnUserOwnedDronesIntoPlayers` (during the death ender) stalled the match. The menu hand-back
-  is not tested yet.
+  `AIFighterInfo::TurnUserOwnedDronesIntoPlayers` (during the death ender) stalled the match.
+  `AIGameInterface::TurnPlayerIntoDrone` binds the player to a spare virtual gamepad and forgets the physical one
+  (virtual pad +16 cleared), so the physical pad is remembered and bound again after `TurnDroneIntoPlayer`.
+- **Open:** the end of match menu still ignores the controller after a p1_cpu match (tested 2026-11-01; the
+  rebinding runs). Close the game from HOME after such a match. Fighting itself works.
 
 ## Move lists (movelist.cpp)
 - The pause menu move list of Cyrax, Sektor and Kronika is a "PLACEHOLDER" line. The move list script fills a page
@@ -250,6 +253,9 @@ Item notes:
   builds it (label element paths: move name at screen +728, header at +760), the script's other headers and
   blank lines for those rows dropped, rows after the list blanked. The cursor only reaches the first row (the
   script knows one move), and the move data panel shows placeholder numbers. Tested: Cyrax, Sektor.
+- The pause menu's Quick Reference box is the quick move list (`SetLocalizedQuickMove(row, nameKey, input, player,
+  …)`, rows at screen +0x200 / +0x250 per player, name in "FocusText0.Text" under the path at +808): it shows
+  the fighter's special moves (fighter found from the player's character definition). Tested: Cyrax.
 
 ## Tooling
 

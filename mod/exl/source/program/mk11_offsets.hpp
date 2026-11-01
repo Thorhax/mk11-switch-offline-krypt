@@ -207,4 +207,9 @@ namespace mk11::off {
     constexpr ptrdiff_t UITextElement_setText = 0x17b9a88; // UITextElement::setText(void const*)
     constexpr ptrdiff_t GridSelectWidgetHandle_Get = 0x1e9e6b8; // UIGridSelectWidget* MKItemNoDestroy::CheckObj<UIGridSelectWidget>()
     constexpr ptrdiff_t UIGridSelectWidget_GetCellElement = 0x1e9e414; // UIFocusElementWidget* UIGridSelectWidget::GetCellElement<UIFocusElementWidget>(int, int)
+    constexpr ptrdiff_t UIMoveListScreen_SetLocalizedQuickMove = 0x2020a68; // UIMoveListScreen::SetLocalizedQuickMove(int, char const*, void const*, unsigned int, bool, GAMEPAD*)
+    constexpr ptrdiff_t UIMoveListScreen_SetQuickMoveBlankLine = 0x2020cc4; // UIMoveListScreen::SetQuickMoveBlankLine(int, unsigned int)
+    constexpr ptrdiff_t SetStaticTextMKString = 0x17bc7d4; // SetStaticTextMKString(UIElement*, char const*, void const*)
+    constexpr ptrdiff_t GAMEPAD_IsPhysicalGamepad = 0x12a20c4; // GAMEPAD::IsPhysicalGamepad() const
+    constexpr ptrdiff_t Input_BindCharToGamepad = 0x12a1eac; // Input::BindCharToGamepad(CORE_PLAYER_INFO*, GAMEPAD*)
 }
