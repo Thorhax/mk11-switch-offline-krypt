@@ -13,8 +13,8 @@
 // (4-byte) string. For these fighters the page gets the module's own rows instead. Pages: 0 basic attacks,
 // 1 kombo attacks, 2 special moves, 3 finishers. The moves are the user's list (Switch button layout).
 // Move names go through the localisation table (unknown keys read "BUG_ME"), so the name label is set to the
-// text afterwards. The script still believes the page has its one placeholder line: its later headers and
-// blank lines for the rows written here are dropped, and its cursor stays on the first move.
+// text afterwards. The script's own headers and blank lines for the rows written here are dropped; its page
+// lines are extended so the cursor reaches every row (ExtendPages), and the move/frame data numbers read "-".
 // The pause menu's Quick Reference box (the quick move list, SetLocalizedQuickMove per row and player) shows
 // their special moves the same way.
 
@@ -146,6 +146,57 @@ HOOK_DEFINE_TRAMPOLINE(Total) {
     }
 };
 
+// The script's pages (script global 0x2810000000000090): 4 x 824 bytes, each up to 100 line object pointers
+// with the line count at +808. A line's type is at +12; types 1, 2 and 4 can take the cursor
+// (MoveList_CanSelectMove). For these fighters a page has one selectable placeholder line, so the cursor
+// stopped on the first move. Before the script fills a page's cells, rows 1..N of each of their pages point
+// at that line and the count becomes 1 + N; the rows' text is written by the hooks above and below.
+namespace {
+    constexpr u64 PagesRegister = 0x2810000000000090;
+    constexpr ptrdiff_t PageSize = 824, PageLineCount = 808, LineType = 12;
+    constexpr int MaxLines = 100;
+
+    bool Selectable(const u8* line) {
+        u32 type = *reinterpret_cast<const u32*>(line + LineType);
+        return type <= 4 && ((1u << type) & 0x16);
+    }
+
+    void ExtendPages(void* vm) {
+        if (!s_Fighter) return;
+        u8* pages = game::Fn<u8* (*)(void*, u64)>(off::MKS_VM_GetStackAddr)(vm, PagesRegister);
+        if (!pages) return;
+        for (int p = 0; p < 4; p++) {
+            u8* page = pages + p * PageSize;
+            auto lines = reinterpret_cast<u8**>(page);
+            s32& count = *reinterpret_cast<s32*>(page + PageLineCount);
+            int want = 1 + s_Fighter->pages[p].count;
+            if (count < 1 || count > MaxLines || want > MaxLines) continue;
+            u8* move = nullptr;
+            for (int i = 0; i < count && !move; i++)
+                if (lines[i] && Selectable(lines[i])) move = lines[i];
+            if (!move || (count == want && lines[want - 1] == move)) continue;
+            LogVerbose("movelist: %s page %d: %d line(s) -> %d", s_Fighter->name, p, count, want);
+            for (int i = 1; i < want; i++) lines[i] = move;
+            count = want;
+        }
+    }
+}
+
+HOOK_DEFINE_TRAMPOLINE(FillMoveCells) {
+    static void Callback(void* vm) {
+        ExtendPages(vm);
+        Orig(vm);
+    }
+};
+
+// The move data and frame data numbers are the placeholder move's; show a dash instead.
+HOOK_DEFINE_TRAMPOLINE(FrameData) {
+    static void Callback(void* screen, int field, const char* text, u32 localized) {
+        if (CurrentPage(screen)) return Orig(screen, field, "-", 0);
+        Orig(screen, field, text, localized);
+    }
+};
+
 HOOK_DEFINE_TRAMPOLINE(MoveRow) {
     static void Callback(void* screen, int row, const char* name, const void* input) {
         if (CurrentPage(screen)) return;  // the placeholder line; the rows are written with the header
@@ -223,5 +274,7 @@ namespace mk11::movelist {
         Blank::InstallAtOffset(off::UIMoveListScreen_SetBlankLine);
         QuickMove::InstallAtOffset(off::UIMoveListScreen_SetLocalizedQuickMove);
         QuickBlank::InstallAtOffset(off::UIMoveListScreen_SetQuickMoveBlankLine);
+        FillMoveCells::InstallAtOffset(off::MKS_MoveListScreen_FillMoveCells);
+        FrameData::InstallAtOffset(off::UIMoveListScreen_SetLocalizedFrameData);
     }
 }

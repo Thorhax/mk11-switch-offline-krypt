@@ -275,8 +275,12 @@ Item notes:
   input)` (input: a 4-byte wide string; names and headers are localisation keys, unknown ones read "BUG_ME").
   For them each page gets the user's list (Switch layout): names written into the row's label after the game
   builds it (label element paths: move name at screen +728, header at +760), the script's other headers and
-  blank lines for those rows dropped, rows after the list blanked. The cursor only reaches the first row (the
-  script knows one move), and the move data panel shows placeholder numbers. Tested: Cyrax, Sektor.
+  blank lines for those rows dropped, rows after the list blanked. Tested: Cyrax, Sektor.
+- Cursor: the script's pages are a script global (`GetStackAddr(0x2810000000000090)`), 4 x 824 bytes: up to 100
+  line object pointers, line count at +808; a line's type at +12, types 1/2/4 take the cursor
+  (`MoveList_CanSelectMove`). `MoveList_FillMoveCells` is hooked: rows 1..N of each page point at the page's
+  placeholder move line and the count becomes 1 + N, so the cursor reaches (and wraps over) every row. The move
+  and frame data fields (`SetLocalizedFrameData`) read "-" for them. Tested with Cyrax 2026-11-02.
 - The pause menu's Quick Reference box is the quick move list (`SetLocalizedQuickMove(row, nameKey, input, player,
   …)`, rows at screen +0x200 / +0x250 per player, name in "FocusText0.Text" under the path at +808): it shows
   the fighter's special moves (fighter found from the player's character definition). Tested: Cyrax.

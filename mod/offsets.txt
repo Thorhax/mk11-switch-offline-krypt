@@ -265,3 +265,5 @@ KollectorTradeUnlockPayloadArg = 0x214bfd8
 KryptRewardUnlockPayloadArg = 0x212b3a4
 PLAYER_INFO_GetCharacterDefinition = PLAYER_INFO::GetCharacterDefinition() const
 CharacterDefinition_SetIsUserOwnedAI = CharacterDefinition::SetIsUserOwnedAI(bool)
+MKS_MoveListScreen_FillMoveCells = MKS_MoveListScreen::MoveList_FillMoveCells(MKS::VM*)
+UIMoveListScreen_SetLocalizedFrameData = UIMoveListScreen::SetLocalizedFrameData(int, char const*, unsigned int)
