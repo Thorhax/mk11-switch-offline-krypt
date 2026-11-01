@@ -3,7 +3,7 @@
 Goal: play the Krypt on the console with no server. MK11 Ultimate 1.0.26, title 0100F2200C984000,
 main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 
-## Status (2026-11-01, v0.8)
+## Status (2026-11-02, v0.10)
 
 | Area | State |
 |---|---|
@@ -15,13 +15,17 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Reward pop-ups after chests and vases, no "error contacting server" kick | Works in v0.3 (user-tested): each save returns a completed server reply |
 | Chest costs deducted | Works |
 | Chest unlockables (concept art etc.) granted | Works (local profile unlock bits) |
-| Gear rewards from chests | v0.3: chests award item sequences, now resolved to their first item (the first gear chest froze the game in v0.2/early v0.3); sequence grant tested via give.txt, awaiting a real gear chest |
+| Gear rewards from chests | Chests award item sequences, resolved to their first item (the first gear chest froze the game in v0.2/early v0.3); sequence grant tested via give.txt. Reward pop-up enabled (v0.9); a pop-up from a real gear chest is untested |
 | Forge | Works (user-tested): materials spent, result added |
-| Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize |
+| Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize. `<slug> <amount>` lines add currencies and stackable items (v0.10, tested: Souls +1000) |
 | Time Krystals | On-console wallet (`wallet/Exp_PremiumCurrency`): earned from player level-ups (as in the normal game) and Krypt chests (`krypt_chest_krystals`, default 10 per chest), spent in the Store |
-| Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01), invisible cells (no art in the game) |
-| Kombat Kard (ZL) | Opens offline (2026-11-01): wallet, Kareer Stats, notifications |
-| Store (ZR) | Works offline (2026-11-01): 10 earnable items, 10 Time Krystals each by default, `store.txt` to change |
+| Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01), invisible cells (no art in the game). Full Klassic Tower with Cyrax completed; finishers disabled in their fights. Move lists in the pause menu and Quick Reference, cursor reaches every row (v0.10, tested with Cyrax) |
+| Kombat Kard (ZL) | Opens offline (2026-11-01): wallet, Kareer Stats, notifications. Daily Challenges: three a day, progress kept, Koins paid at the goal (tested: throws, uppercuts) |
+| Krypt Shrine and Kollector | Work offline (user-tested 2026-11-01): Kollector trades spend relics, gear and skin pop-ups shown (`AddUnlockMessageFromOnlinePayload` call sites pass true) |
+| Free spending (`free_currency`, `free_items`) | Optional, off by default (v0.9): `wallet::Set` ignores decreases of the four currencies / of non-`Exp_` spendables. Tested in the Store; untested for chests, the Forge and Kollector trades |
+| AI fighter (`p1_cpu`) | Optional, off by default: player 1 uses the game's user-owned AI path; the end-of-match menu answers the controller (v0.10, tested in Fight > Local; Klassic Towers only with the old path) |
+| Log (`verbose_log`) | Routine lines off by default (v0.10) |
+| Store (ZR) | Works offline (2026-11-01): 10 earnable items, 10 Time Krystals each by default, `store.txt` to change. One crash on a second Time Krystal purchase (2026-11-01, MK11 cheat file active) was not reproduced in 17 tries |
 | Boot error 2123-0011 | Removed: the ShowError call in OnlineSystemGetEndpoints::FiberExecute is skipped |
 | "Unable to sync your online inventory" (Kustomize, fights) | Removed: the Yes/No boxes are answered Yes without being shown |
 | Klassic Towers | Works offline (tested 2026-10-31, Novice x4): full mode, tower record on the SD card (`portal/KlassicTowers` in krypt.dat), completions and best score kept, end-of-fight and completion rewards granted |
