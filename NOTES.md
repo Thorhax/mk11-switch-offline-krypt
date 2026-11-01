@@ -19,6 +19,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Forge | Works (user-tested): materials spent, result added |
 | Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize |
 | Time Krystals | On-console wallet (`wallet/Exp_PremiumCurrency`): earned from player level-ups (as in the normal game) and Krypt chests (`krypt_chest_krystals`, default 10 per chest), spent in the Store |
+| Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01), invisible cells (no art in the game) |
 | Store (ZR) | Works offline (2026-11-01): 10 earnable items, 10 Time Krystals each by default, `store.txt` to change |
 | Boot error 2123-0011 | Removed: the ShowError call in OnlineSystemGetEndpoints::FiberExecute is skipped |
 | "Unable to sync your online inventory" (Kustomize, fights) | Removed: the Yes/No boxes are answered Yes without being shown |
@@ -203,23 +204,27 @@ Item notes:
   from the items as a safety net. Found with an Atmosphère crash report once SaltyNX and the MK11 cheat file
   were disabled (see Tooling).
 
-## Character select: Cyrax, Sektor, Kronika (investigation, 2026-11-01)
-- The versus grid (`UIPlayerSelectModuleScreen`) is 6×7 cells (`UIGridSelectionNavTable` from the menu script:
-  per cell its own and its left/right/up/down (column,row)). 37 are used; free: (row,col) (0,0) (0,5) (6,0) (6,1)
-  (6,5).
-- The roster is `charTable` in `PlayerSelect.mko` (system art): 37 rows of 0x30 bytes —
-  `{s32 row, s32 col, "CHAR_ShangTsung", "ShangTsung" (portrait in ui_ps_CharacterImages), "SHT", "", 0}`.
-  Read with `LoadScriptFromSystemArt("PlayerSelect.mko")` + `ScriptObj::GetVariable("charTable")` /
-  `GetRowCount`. The script hides every cell (`SetCellHidden`) and shows each row with
-  `SetCellImage(row, col, "MainlineManaged/UI/ui_ps_CharacterImages/", portrait)`; free cells are asked
-  `FGGameInfo::IsHiddenCharacter("")`.
-- `CHAR_Cyrax`, `CHAR_Sektor`, `CHAR_Kronika` fighter scripts exist (story / boss), but none has the per-fighter
-  data playable ones have (`<Name>.Title`, `Exp_<Name>`, `<Name>FatalityHeadUnlock`; only `Char_Kronika`).
-- Next steps: add rows for the free cells (the script iterates the table itself, so the row count it uses must
-  grow too), find the 3-letter keys and portraits, then follow selection into variation/loadout select and fight
-  loading. Expect gaps (no loadouts/XP for them); keep it to offline local modes.
-- Logger used: `mod/research/roster.cpp` (not built; copy it into `exl/source/program` with its offsets to use it).
-  The charTable dump in it reads fields 4–5 as strings and crashes on row 2: print only fields 1–3.
+## Character select: Cyrax, Sektor, Kronika (roster.cpp, 2026-11-01)
+- **Works (local versus, tested):** the cursor reaches them, the name line shows them, they have one "Default"
+  variation, and full matches run with them as P1 or CPU (Cyrax vs Sub-Zero, Kronika vs Sektor; Cyrax wins,
+  victory screen, rewards). Without character data they earn no character XP. Klassic Towers' grid reaches them
+  too (a tower run with them, and its ending, is untested).
+- **Not shown:** the select screen's Flash movie has no cell at the free grid positions (GetCellElement returns
+  null) and the game has no art for them (no `cell_<Name>` in ui_ps_CharacterImages, no `<Name>_P1` in
+  ui_ps_Versus_Jpegs), so their cells look empty and the large art keeps the previous fighter.
+  Where: Cyrax top-left (up from Joker), Sektor top-right (up from Spawn), Kronika bottom-right (right of Rain).
+- How: PlayerSelect.mko is compiled to native code (`MKS_PlayerSelect::*`). Its roster `charTable` (37 rows of
+  0x30: row, col, `CHAR_<Name>`, portrait, key, ...) is reached through `MKS::VM::GetStackAddr(0x2810000000001288)`;
+  that call returns a 40-row copy (extra rows copy Scorpion's tail fields), and the 23 row-count constants
+  (36/37) in MKS_PlayerSelect become 39/40 once the copy is in use (each checked before patching).
+  `UIPlayerSelectModuleScreen` gets a copy of the script's `UIGridSelectionNavTable` (42 entries
+  `{cell, left, right, up, down}`) with the free cells linked in. `FGGameInfo::GetIsCharacterLocked` says
+  unlocked for them (they have no character content entry) unless a user is connected to Hydra.
+- Missing UI images used to close the game (`UIImageElement::SetTextureDecodeAsync` decompresses a null
+  texture); they are now skipped and logged ("no image ...").
+- Keys: `CYR`, `SEK`, `KRO`. Fighting them via a swapped selection showed the selection has to change at
+  `CharacterDefinition::SetCharacter` time (swapping at `PLAYER_INFO` left Sub-Zero's intro assets requested).
+- `NRS::FailAssert` is hooked to log assert messages (e.g. "Unable to load file X, failed to find import: Y").
 
 ## Tooling
 

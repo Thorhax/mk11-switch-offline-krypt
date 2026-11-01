@@ -175,4 +175,16 @@ namespace mk11::off {
     constexpr ptrdiff_t SlotFileManager_IsSlotLoading = 0x18067f4; // SlotFileManager::IsSlotLoading(int)
     constexpr ptrdiff_t LoadScreenAsync = 0x17bd5a0; // LoadScreenAsync(char const*, int)
     constexpr ptrdiff_t MKS_MainMenu_KombatFeedModalLoop = 0x5b0b6cc; // MKS_MainMenu::MainMenu_KombatFeedModalLoop(MKS::VM*)
+    constexpr ptrdiff_t CharacterDefinition_SetCharacter = 0x204b144; // CharacterDefinition::SetCharacter(char const*, TArray<GearItem, 8u, IsolatedLongTermAllocator> const*, char const*)
+    constexpr ptrdiff_t NRS_FailAssert = 0x368d98; // NRS::FailAssert(char const*, char const*, int, char const*, ...)
+    constexpr ptrdiff_t TArrayBase_AddUninitialized = 0xca6c; // TArrayBase<void, NRS::DefaultContainerAllocator>::AddUninitialized(unsigned int, unsigned int, unsigned int)
+    constexpr ptrdiff_t MKS_VM_GetStackAddr = 0x17a9dd0; // MKS::VM::GetStackAddr(MKS::RegisterID)
+    constexpr ptrdiff_t MKS_VM_GetScript = 0x179fce4; // MKS::VM::GetScript(bool) const
+    constexpr ptrdiff_t MKS_ScriptObj_GetVariable = 0x17abc80; // MKS::ScriptObj::GetVariable(char const*, bool) const
+    constexpr ptrdiff_t MKS_ScriptObj_GetRowCount = 0x17ac03c; // MKS::ScriptObj::GetRowCount(void const*) const
+    constexpr ptrdiff_t UIPlayerSelectModuleScreen_Ctor = 0x25aadac; // UIPlayerSelectModuleScreen::UIPlayerSelectModuleScreen(UIGridSelectionNavTable const*, int, int)
+    constexpr ptrdiff_t FGGameInfo_GetIsCharacterLocked = 0x2057d0c; // FGGameInfo::GetIsCharacterLocked(FGUserEntity*, char const*)
+    constexpr ptrdiff_t UIImageElement_SetTextureDecodeAsync = 0x17baf58; // UIImageElement::SetTextureDecodeAsync(char const*, unsigned int)
+    constexpr ptrdiff_t PathUtils_GetBaseFilename = 0x110ed14; // PathUtils::GetBaseFilename(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, int)
+    constexpr ptrdiff_t UObject_StaticFindObject = 0x10fcaac; // UObject::StaticFindObject(UClass const*, UObject*, char const*, int)
 }

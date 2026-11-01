@@ -12,6 +12,7 @@
 #include "mk11_offsets.hpp"
 #include "portals.hpp"
 #include "shop.hpp"
+#include "roster.hpp"
 #include "system_dialogs.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -540,6 +541,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     system_dialogs::Install();
     portals::Install();
     shop::Install();
+    roster::Install();
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);
     MoviePlay::InstallAtOffset(off::MoviePlayer_Movie_Play);
