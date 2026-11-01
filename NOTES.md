@@ -160,6 +160,12 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
   decreases of Koins, Souls, Hearts and Time Krystals / of spendable items (materials, relics, keys,
   Konsumables). Every offline spend goes through the wallet, so this covers the Krypt, Shrine, Kollector,
   Forge, store and key summons. Verified with a store purchase (Time Krystals stayed at 400), 2026-11-01.
+- Logging: routine lines (wallet changes, store flushes, Krypt saves and server replies, daily progress, portal
+  commands, shop catalogue dumps) use `LogVerbose`, written only with `verbose_log=1`. Errors, grants and one-off
+  events always go to log.txt.
+- give.txt also takes `<slug> <amount>` lines: Exp_Koins, Exp_SoulFragments, Exp_BrutalityHearts,
+  Exp_PremiumCurrency or any spendable slug (checked with `GetItemDefinitionBySlug`); the amount is added to the
+  wallet. Verified 2026-11-01 (Souls +1000 on the Krypt HUD).
 - Credits: the two credits movies in `BasicLadder_PlayLadderEnding` are skipped by making `Movie_Play` report
   failure for those call sites.
 - exlaunch's trampoline pool holds 200 bytes per hook; `JitSize` was raised to 0x4000. Module code

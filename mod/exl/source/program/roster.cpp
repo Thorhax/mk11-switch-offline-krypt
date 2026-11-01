@@ -224,7 +224,7 @@ namespace {
 
     void LogBlocked(const char* what) {
         static int s_Logged = 0;
-        if (s_Logged++ < 20) Log("roster: %s blocked (extra fighter in the fight)", what);
+        if (s_Logged++ < 20) LogVerbose("roster: %s blocked (extra fighter in the fight)", what);
     }
 }
 

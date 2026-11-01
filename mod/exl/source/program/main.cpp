@@ -116,7 +116,7 @@ namespace {
         }
         hydra::CompletedReply(out, text);
         game::Free(text);
-        Log("Krypt save: server reply %p (%s)", out->value, rewardsLen ? "with rewards" : "empty");
+        LogVerbose("Krypt save: server reply %p (%s)", out->value, rewardsLen ? "with rewards" : "empty");
     }
 
     // Store keys are "<background>/<save key>" so DLC backgrounds cannot collide.
@@ -127,7 +127,7 @@ namespace {
 
 HOOK_DEFINE_REPLACE(KryptFeedWait) {
     static bool Callback(FeedObj* feed) {
-        Log("Krypt feed: reporting %d step(s) as downloaded (%zu stored keys)", feed->stepCount, store::Count());
+        LogVerbose("Krypt feed: reporting %d step(s) as downloaded (%zu stored keys)", feed->stepCount, store::Count());
         for (s32 i = 0; i < feed->stepCount; i++)
             if (feed->steps[i]) feed->steps[i]->state = FeedStepSucceeded;
         if (feed->stepCount > 0) feed->activeStep = feed->stepCount - 1;
@@ -150,7 +150,7 @@ HOOK_DEFINE_REPLACE(KryptSave) {
             store::Put(key, json.c_str());
         }
         store::Flush();
-        Log("Krypt save: %d object(s)", objects->num);
+        LogVerbose("Krypt save: %d object(s)", objects->num);
 
         if (char* replay = store::TakeReplayBatch()) {
             Log("Krypt save: applying replay_batch.json");
@@ -166,7 +166,7 @@ HOOK_DEFINE_REPLACE(KryptSave) {
             if (batchValue.value) {
                 game::NRSString json = game::ToJsonString(batchValue.value);
                 store::RecordBatch(json.c_str());
-                Log("Krypt save: inventory batch %.300s", json.c_str());
+                LogVerbose("Krypt save: inventory batch %.300s", json.c_str());
                 batch::Apply(json.c_str());
                 RefreshKryptWallet();
                 CompletedResponse(&response, json.c_str());
@@ -226,11 +226,11 @@ HOOK_DEFINE_TRAMPOLINE(KryptServerResponse) {
             s32 state;
             u32 code;
             hydra::Describe(ssc, &state, &code);
-            Log("server reply check: %p state %d code %#x", ssc, state, code);
+            LogVerbose("server reply check: %p state %d code %#x", ssc, state, code);
         } else
-            Log("server reply check: no request");
+            LogVerbose("server reply check: no request");
         bool ok = Orig(handle);
-        Log("server reply check: %s", ok ? "success" : "failed");
+        (ok ? LogVerbose : Log)("server reply check: %s", ok ? "success" : "failed");
         return ok;
     }
 };
@@ -308,7 +308,7 @@ namespace {
                     if (other && !strcmp(other, slug) && json::Integer(json::Find(entry, "inc_amount"), &amount)) total += amount;
                 }
                 count = current + (int)total;
-                Log("experience: %s %d + %lld = %d", slug, current, total, count);
+                LogVerbose("experience: %s %d + %lld = %d", slug, current, total, count);
             }
             n += snprintf(out + n, size - n, "%s{\"id\":\"offline-%s\",\"item_slug\":%s,\"count\":%d}",
                           first ? "" : ",", slug, quoted, count);
@@ -330,7 +330,7 @@ HOOK_DEFINE_TRAMPOLINE(InventoryPost) {
             if (value.value) {
                 game::NRSString json = game::ToJsonString(value.value);
                 store::RecordBatch(json.c_str());
-                Log("inventory post %s: %.300s", endpoint->c_str(), json.c_str());
+                LogVerbose("inventory post %s: %.300s", endpoint->c_str(), json.c_str());
                 batch::Apply(json.c_str(), false);
                 RefreshKryptWallet();
             }
@@ -367,7 +367,7 @@ HOOK_DEFINE_TRAMPOLINE(HydraPost) {
         game::Free(bodyText);
         game::HydraHandle reply;
         hydra::CompletedReply(&reply, replyText);
-        Log("inventory post %s answered: %.300s", endpoint->c_str(), replyText);
+        LogVerbose("inventory post %s answered: %.300s", endpoint->c_str(), replyText);
         game::Free(replyText);
         hydra::InvokeCompletion(done, &reply);
         return reply;

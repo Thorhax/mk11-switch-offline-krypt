@@ -1,4 +1,5 @@
 #include "log.hpp"
+#include "config.hpp"
 #include "lib.hpp"
 #include "nn/fs.hpp"
 #include <atomic>
@@ -55,12 +56,29 @@ namespace mk11 {
         nn::fs::SetEnabledAutoAbort(true);
     }
 
+    namespace {
+        void Write(const char* fmt, va_list a);
+    }
+
     void Log(const char* fmt, ...) {
-        char buf[512];
         va_list a;
         va_start(a, fmt);
-        int n = vsnprintf(buf, sizeof(buf) - 1, fmt, a);
+        Write(fmt, a);
         va_end(a);
+    }
+
+    void LogVerbose(const char* fmt, ...) {
+        if (!config::VerboseLog()) return;
+        va_list a;
+        va_start(a, fmt);
+        Write(fmt, a);
+        va_end(a);
+    }
+
+    namespace {
+    void Write(const char* fmt, va_list a) {
+        char buf[512];
+        int n = vsnprintf(buf, sizeof(buf) - 1, fmt, a);
         if (n < 0) return;
         if (n > (int)sizeof(buf) - 2) n = sizeof(buf) - 2;
         buf[n++] = '\n';
@@ -77,5 +95,6 @@ namespace mk11 {
             s_Offset += n;
         }
         nn::fs::SetEnabledAutoAbort(true);
+    }
     }
 }

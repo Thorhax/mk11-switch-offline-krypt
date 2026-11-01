@@ -340,6 +340,6 @@ namespace mk11::store {
         game::Free(buf);
 
         if (ok) s_Dirty = false;
-        Log("store: flush %zu entries, %zu bytes -> %s", s_Count, total, ok ? "ok" : "FAILED");
+        LogVerbose("store: flush %zu entries, %zu bytes -> %s", s_Count, total, ok ? "ok" : "FAILED");
     }
 }

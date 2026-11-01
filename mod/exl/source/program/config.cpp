@@ -22,6 +22,7 @@ namespace mk11::config {
         bool s_DailyChallenges = true;
         bool s_FreeCurrency = false;
         bool s_FreeItems = false;
+        bool s_VerboseLog = false;
 
         void Apply(const char* key, const char* value) {
             if (strcmp(key, "krypt_currency_topup") == 0) s_TopUp = atoi(value);
@@ -33,6 +34,7 @@ namespace mk11::config {
             else if (strcmp(key, "daily_challenges") == 0) s_DailyChallenges = atoi(value) != 0;
             else if (strcmp(key, "free_currency") == 0) s_FreeCurrency = atoi(value) != 0;
             else if (strcmp(key, "free_items") == 0) s_FreeItems = atoi(value) != 0;
+            else if (strcmp(key, "verbose_log") == 0) s_VerboseLog = atoi(value) != 0;
         }
 
         void Load() {
@@ -64,8 +66,8 @@ namespace mk11::config {
                 }
                 line = next;
             }
-            Log("config: krypt_currency_topup=%d apply_gear_rewards=%d skip_tower_credits=%d offline_store=%d krypt_chest_krystals=%d p1_cpu=%d free_currency=%d free_items=%d", s_TopUp,
-                s_ApplyGear, s_SkipTowerCredits, s_OfflineStore, s_ChestKrystals, s_P1Cpu, s_FreeCurrency, s_FreeItems);
+            Log("config: krypt_currency_topup=%d apply_gear_rewards=%d skip_tower_credits=%d offline_store=%d krypt_chest_krystals=%d p1_cpu=%d free_currency=%d free_items=%d verbose_log=%d", s_TopUp,
+                s_ApplyGear, s_SkipTowerCredits, s_OfflineStore, s_ChestKrystals, s_P1Cpu, s_FreeCurrency, s_FreeItems, s_VerboseLog);
         }
     }
 
@@ -97,6 +99,11 @@ namespace mk11::config {
     bool FreeItems() {
         if (!s_Loaded) Load();
         return s_FreeItems;
+    }
+
+    bool VerboseLog() {
+        if (!s_Loaded) Load();
+        return s_VerboseLog;
     }
 
     bool P1Cpu() {

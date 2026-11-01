@@ -124,7 +124,7 @@ namespace {
             }
             game::Fn<void (*)(void*, void*, u8*)>(off::DailyChallengeSystem_CreateChallengesForUser)(system, user, gos);
             game::Fn<void (*)(u8*)>(GosDataDtor)(gos);
-            Log("daily: %s", entry);
+            LogVerbose("daily: %s", entry);
             made++;
         });
         Log("daily: day %lld, %d challenge(s), user has %d", (long long)day, made, count);
@@ -132,7 +132,7 @@ namespace {
         if (!s_Logged) {
             s_Logged = true;
             for (int t = 0; t <= 6; t++)
-                Log("daily: experience type %d = %s", t, game::Fn<const char* (*)(int)>(off::GetExperienceSlugFromType)(t));
+                LogVerbose("daily: experience type %d = %s", t, game::Fn<const char* (*)(int)>(off::GetExperienceSlugFromType)(t));
         }
     }
 }
@@ -183,7 +183,7 @@ HOOK_DEFINE_TRAMPOLINE(ChallengeUpdate) {
         Key(key, sizeof(key), id, "");
         snprintf(value, sizeof(value), "%d", current);
         store::Put(key, value);
-        Log("daily: %s %d -> %d / %d", id, before, current, goal);
+        LogVerbose("daily: %s %d -> %d / %d", id, before, current, goal);
         Key(key, sizeof(key), id, "/done");
         if (current >= goal && !store::Get(key)) {
             int koins = Reward(id);
@@ -221,7 +221,7 @@ namespace mk11::daily {
             game::NRSString s = game::ToJsonString(body->value);
             text = game::StrDup(s.c_str());
         }
-        Log("daily: %s %.400s", endpoint, text ? text : "");
+        LogVerbose("daily: %s %.400s", endpoint, text ? text : "");
         json::Value* root = text ? json::Parse(text) : nullptr;
         store::Batch storeBatch;
         if (update) {

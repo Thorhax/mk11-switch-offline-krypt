@@ -1,4 +1,5 @@
 #include "gear.hpp"
+#include "batch_apply.hpp"
 #include "game.hpp"
 #include "log.hpp"
 #include "nn/fs.hpp"
@@ -93,7 +94,7 @@ namespace mk11::gear {
             }
             handle = *first;
             def = FindObject(handle);
-            Log("gear: %s is an item sequence, granting its first item", id);
+            LogVerbose("gear: %s is an item sequence, granting its first item", id);
         }
         if (!def || !IsA(def, off::Vtable_FItemDefinition)) {
             Log("gear: %s: no item definition", id);
@@ -117,6 +118,35 @@ namespace mk11::gear {
         DestroyGearItem(gear);
         Log("gear: %s (level %d) -> %s", id, level, ok ? "added" : "NOT added");
         return ok;
+    }
+
+    namespace {
+        // "<slug> <amount>" adds to a wallet balance: Koins, Souls, Hearts, Time Krystals or a spendable
+        // item (crafting material, Kollector relic, key, Konsumable). Any other line is a gear name or GUID.
+        bool GiveLine(void* user, char* line) {
+            char* space = strpbrk(line, " \t");
+            if (!space) return Add(user, line);
+            char* end = nullptr;
+            long amount = strtol(space + 1, &end, 10);
+            if (end == space + 1 || *end) return Add(user, line);
+            *space = 0;
+            bool known = false;
+            if (strncmp(line, "Exp_", 4) == 0) {
+                for (const char* currency : { "Exp_Koins", "Exp_SoulFragments", "Exp_BrutalityHearts", "Exp_PremiumCurrency" })
+                    if (strcmp(line, currency) == 0) known = true;
+            } else {
+                game::NRSString slug(line);
+                known = game::Fn<const void* (*)(const game::NRSString&)>(off::SpendableItemManager_GetItemDefinitionBySlug)(slug) != nullptr;
+            }
+            if (!known || amount <= 0 || amount > 100000000) {
+                Log("give: %s %ld: unknown currency or item, or a bad amount", line, amount);
+                return false;
+            }
+            long total = (long)wallet::Get(line) + amount;
+            wallet::Set(line, total > 0x7fffffff ? 0x7fffffff : (int)total);
+            Log("give: %s +%ld", line, amount);
+            return true;
+        }
     }
 
     void ApplyGiveList(void* user) {
@@ -146,7 +176,7 @@ namespace mk11::gear {
             if (char* hash = strchr(line, '#')) *hash = 0;
             while (*line == ' ' || *line == '\t') line++;
             for (char* e = line + strlen(line); e > line && (e[-1] == '\r' || e[-1] == ' ' || e[-1] == '\t'); ) *--e = 0;
-            if (*line) (Add(user, line) ? added : failed)++;
+            if (*line) (GiveLine(user, line) ? added : failed)++;
             line = next;
         }
         game::Free(buf);

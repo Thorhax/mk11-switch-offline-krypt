@@ -49,7 +49,7 @@ namespace mk11::wallet {
         snprintf(text, sizeof(text), "%d", value);
         store::Put(key, text);
         store::Flush();
-        Log("wallet: %s = %d", slug, value);
+        LogVerbose("wallet: %s = %d", slug, value);
     }
 }
 

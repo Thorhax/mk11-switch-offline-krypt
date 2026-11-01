@@ -53,7 +53,7 @@ HOOK_DEFINE_TRAMPOLINE(HandleNetworkRequestErrorResult) {
 HOOK_DEFINE_TRAMPOLINE(EnsureNetworkServiceAccountAvailable) {
     static u32 Callback(const void* user) {
         u32 r = Orig(user);
-        mk11::Log("system: nn::account::EnsureNetworkServiceAccountAvailable -> %#x from main+%#lx", r, Caller(__builtin_return_address(0)));
+        mk11::LogVerbose("system: nn::account::EnsureNetworkServiceAccountAvailable -> %#x from main+%#lx", r, Caller(__builtin_return_address(0)));
         return r;
     }
 };

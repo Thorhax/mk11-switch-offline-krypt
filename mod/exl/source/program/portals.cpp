@@ -135,7 +135,7 @@ namespace {
                 if (json::Integer(json::Find(record, scorePath), &best) && best >= score) continue;
                 json::SetInteger(record, scorePath, score);
                 json::SetInteger(record, rankPath, rank);
-                Log("portals: best score %s = %lld (rank %lld)", path + 19, score, rank);
+                LogVerbose("portals: best score %s = %lld (rank %lld)", path + 19, score, rank);
             }
         }
         json::Destroy(extra);
@@ -217,12 +217,12 @@ namespace {
             json::Value* value = json::Find(command, "value");
             long long amount, current = 0;
             if (type && path && value && !strcmp(type, "set")) {
-                Log("portals: set %s -> %s", path, json::Set(record, path, value) ? "ok" : "path not found");
+                LogVerbose("portals: set %s -> %s", path, json::Set(record, path, value) ? "ok" : "path not found");
             } else if (type && path && json::Integer(value, &amount) && (!strcmp(type, "inc") || !strcmp(type, "max"))) {
                 // inc adds to the stored number, max keeps the larger one; a missing number counts as 0
                 bool had = json::Integer(json::Find(record, path), &current);
                 long long result = !strcmp(type, "inc") ? current + amount : (had && current > amount ? current : amount);
-                Log("portals: %s %s %lld -> %lld %s", type, path, current, result,
+                LogVerbose("portals: %s %s %lld -> %lld %s", type, path, current, result,
                     json::SetInteger(record, path, result) ? "ok" : "path not found");
             } else
                 Log("portals: command not applied: %.300s", text ? text : "(none)");
@@ -482,7 +482,7 @@ HOOK_DEFINE_TRAMPOLINE(NetworkTime) {
         s64 seconds = 0;
         u32 result = SdkUserClockGetCurrentTime(&seconds);
         static int s_Logged = 0;
-        if (s_Logged++ < 3) Log("clock: game time %lld ms; user clock result %#x, %lld s", (long long)*reinterpret_cast<s64*>(now.bytes), result, (long long)seconds);
+        if (s_Logged++ < 3) LogVerbose("clock: game time %lld ms; user clock result %#x, %lld s", (long long)*reinterpret_cast<s64*>(now.bytes), result, (long long)seconds);
         if (result == 0 && seconds > 0) {
             *reinterpret_cast<s64*>(now.bytes) = seconds * 1000;
             *reinterpret_cast<s64*>(now.bytes + 8) = 0;
@@ -506,7 +506,7 @@ HOOK_DEFINE_TRAMPOLINE(TowersScreenStart) {
                 if (Inject(ctx->user, json)) (*ctx->count)++;
                 else Log("portals: %s not refreshed", key);
             }, &context);
-            Log("portals: %d tower record(s) refreshed for the tower screen", count);
+            LogVerbose("portals: %d tower record(s) refreshed for the tower screen", count);
         }
         Orig(screen);
     }
@@ -599,7 +599,7 @@ HOOK_DEFINE_TRAMPOLINE(PortalEventUpdate) {
         store::Batch storeBatch;
         RecordRequest("UpdatePortalEvent", a->c_str(), b->c_str(), eventName->c_str(), version, *commands,
                       extra ? extra->value : nullptr);
-        Log("portals: UpdatePortalEvent %s / %s stage %d event %d (%s)", a->c_str(), b->c_str(), stage, eventIndex, eventName->c_str());
+        LogVerbose("portals: UpdatePortalEvent %s / %s stage %d event %d (%s)", a->c_str(), b->c_str(), stage, eventIndex, eventName->c_str());
         game::HydraHandle reply;
         const char* names[] = { b->c_str(), a->c_str(), c->c_str() };
         char key[128];
@@ -610,7 +610,7 @@ HOOK_DEFINE_TRAMPOLINE(PortalEventUpdate) {
         }
         ApplyCommands(record, *commands);
         char* extraText = ValueJson(extra ? extra->value : nullptr);
-        Log("portals: event extra data %s", extraText ? "read" : "none");
+        LogVerbose("portals: event extra data %s", extraText ? "read" : "none");
         if (extraText) RecordBestScore(record, b->c_str(), stage, eventName->c_str(), extraText);
         char* rewards = extraText ? GrantUnlocks(extraText) : nullptr;
         Commit(user, record, key, &reply, rewards);
@@ -618,7 +618,7 @@ HOOK_DEFINE_TRAMPOLINE(PortalEventUpdate) {
         game::Free(extraText);
         json::Destroy(record);
         // The reply's reference is kept (HydraHandle does not release it), so the id stays valid.
-        Log("portals: UpdatePortalEvent answered (request id %#llx)", (unsigned long long)hydra::ObjectId(reply.value));
+        LogVerbose("portals: UpdatePortalEvent answered (request id %#llx)", (unsigned long long)hydra::ObjectId(reply.value));
         return hydra::ObjectId(reply.value);
     }
 };

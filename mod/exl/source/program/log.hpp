@@ -9,4 +9,6 @@ namespace mk11 {
     bool MountSd();
     void LogInit();
     void Log(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
+    // Routine detail (wallet changes, saves, server replies): written only with verbose_log=1.
+    void LogVerbose(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 }

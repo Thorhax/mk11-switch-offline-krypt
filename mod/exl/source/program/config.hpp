@@ -23,4 +23,6 @@ namespace mk11::config {
     bool FreeCurrency();
     // Spending never lowers crafting materials, Kollector relics, keys or Konsumables (free_items=1).
     bool FreeItems();
+    // Routine log lines (LogVerbose) are written only with verbose_log=1.
+    bool VerboseLog();
 }

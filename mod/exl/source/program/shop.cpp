@@ -207,17 +207,17 @@ namespace {
             bool valid = game::Fn<bool (*)()>(off::MK11PremiumShop_IsDataValid)();
             Log("shop: offline catalogue %s (%zu bytes)", catalogue.value && valid ? "loaded" : "NOT loaded", n);
             if (!valid) {
-                Log("shop: %s", json);
+                LogVerbose("shop: %s", json);
                 const ProductArray* sections[] = { &Global<ProductArray>(off::MK11PremiumShop_sFeaturedItems),
                                                    &Global<ProductArray>(off::MK11PremiumShop_sDailyItems) };
                 for (const ProductArray* products : sections) {
-                    Log("shop: section with %d products", products->num);
+                    LogVerbose("shop: section with %d products", products->num);
                     for (s32 p = 0; p < products->num; p++)
                         for (s32 a = 0; a < products->data[p].num; a++) {
                             void* table = *reinterpret_cast<void**>(products->data[p].availabilities + a * AvailabilitySize);
                             s32 price = table ? reinterpret_cast<s32 (*)(void*)>((*reinterpret_cast<void***>(table))[16])(table) : -1;
                             s32 items = table ? game::Fn<s32 (*)(void*)>(off::LootTable_GetNumberOfEnabledItems)(table) : -1;
-                            Log("shop:   product %d choice %d: table %p price %d items %d", p, a, table, price, items);
+                            LogVerbose("shop:   product %d choice %d: table %p price %d items %d", p, a, table, price, items);
                         }
                 }
             }
