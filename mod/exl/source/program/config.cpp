@@ -19,7 +19,7 @@ namespace mk11::config {
         bool s_OfflineStore = true;
         int s_ChestKrystals = 10;
         bool s_P1Cpu = false;
-        bool s_DailyChallenges = false;
+        bool s_DailyChallenges = true;
 
         void Apply(const char* key, const char* value) {
             if (strcmp(key, "krypt_currency_topup") == 0) s_TopUp = atoi(value);

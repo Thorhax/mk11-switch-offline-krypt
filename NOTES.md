@@ -263,18 +263,21 @@ Item notes:
   (`OnlineNX64UserData::LoadNSAData`, fails offline: "You must be connected...") and then waits on "Connecting to
   server..." until `OnlineHydra::IsConnected`. Both are passed offline (main+0x20cb494 tbz -> nop; main+0x20cb620
   `mov w22, w0` -> `mov w22, #1`). Kareer Stats show the local history.
-- Daily Challenges (experimental, `daily_challenges=1`): Hydra's `daily_challenge_get` entries are
+- Daily Challenges (`daily_challenges=1`, the default): Hydra's `daily_challenge_get` entries are
   `{id, data: {type, key, current, goal, data: {goal, currencyType (1 Koins, 4 Souls, 5 Hearts), currencyAmount,
   stars, category | awardOnWinOnly}}}`; types DailyOnlineFightingStatChallengeInfo / ProfileStat / PlayAsChar, key a
-  stat name (745 names: data/stat_names.txt). The module builds three a day and creates them as the reply handler
-  does (`DailyChallengeGOSData` + `CreateChallengesForUser`); `daily_challenge_update` / `daily_challenge_reward`
-  posts are answered locally (progress in krypt.dat `daily/<id>`, reward batch applied). Stats with challenge
-  text: TOTAL_SPECIALS_USED, KRUSHING_BLOWS_PERFORMED, TOTAL_SUPERMOVES, TOTAL_THROWS, TOTAL_UPPERCUTS,
-  TOTAL_BRUTALITIES, TOTAL_FATALITIES ("BUG_ME": TOTAL_WINS, TOTAL_FLAWLESS_ROUNDS, TOTAL_COMBOS,
-  TOTAL_JUMP_ATTACKS, TOTAL_PROJECTILES_FIRED as fighting stats).
-- **Open:** the challenges show and are checked at the end of every match (`UpdateChallenges` ->
-  `ChallengeInfoUpdate`), but the stats read stay 0 offline (`BaseFightingStats::GetTotalOfScalar`, even
-  PLAYER_DAMAGE_TAKEN; profile stat challenges do not move either), so nothing progresses. Hence off by default.
+  stat name (745 names: data/stat_names.txt). The module picks three a day (console clock) from a pool of fighting
+  stats with challenge text (TOTAL_SPECIALS_USED, KRUSHING_BLOWS_PERFORMED, TOTAL_SUPERMOVES, TOTAL_THROWS,
+  TOTAL_UPPERCUTS, TOTAL_BRUTALITIES, TOTAL_FATALITIES; "BUG_ME" for TOTAL_WINS, TOTAL_FLAWLESS_ROUNDS,
+  TOTAL_COMBOS, TOTAL_JUMP_ATTACKS, TOTAL_PROJECTILES_FIRED) and creates them on the main menu as the reply handler
+  does (`DailyChallengeGOSData` + `CreateChallengesForUser`).
+- Progress: after a match with a human player, `UpdateChallenges` -> `DailyChallengeObject::DailyChallengeUpdate`
+  -> `ChallengeInfoUpdate` reads the match's fight stats and only queues an increment
+  (`OnlineDailyChallengeInfo::QueueIncrementCommand`, info +56/+64) for the next upload, which never happens
+  offline. The DailyChallengeUpdate hook applies the queue to the info (current +32, goal +36), stores it in
+  krypt.dat (`daily/<id>`) and pays the Koins once at the goal (`daily/<id>/done`). Tested 2026-11-01: throws and
+  uppercuts completed and paid. AI-only matches (p1_cpu) do not count (no human player).
+- Note: PLAYER_DAMAGE_TAKEN is a fraction of the health bar (float < 1 per match), not a usable test stat.
 
 ## Tooling
 

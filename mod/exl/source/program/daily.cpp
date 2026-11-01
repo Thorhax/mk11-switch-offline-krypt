@@ -20,9 +20,11 @@
 // DailyChallengeSystem::RefreshDailyChallenges on the main menu; progress is kept in krypt.dat
 // (daily/<id>) and the reward batch is applied to the wallet.
 //
-// Experimental (daily_challenges=1): the challenges show and are checked at the end of each match
-// (DailyChallengeSystem::UpdateChallenges -> ChallengeInfoUpdate), but offline the stats they read stay 0 (fight
-// stats from BaseFightingStats::GetTotalOfScalar, and profile stats too), so nothing progresses yet.
+// At the end of a match with a human player the game checks each challenge (DailyChallengeSystem::
+// UpdateChallenges -> DailyChallengeObject::DailyChallengeUpdate -> ChallengeInfoUpdate), which only queues an
+// increment (OnlineDailyChallengeInfo::QueueIncrementCommand) for the next upload; offline nothing uploads, so
+// the queued increments are applied here: progress (info +32, goal +36) is kept in krypt.dat and a challenge
+// that reaches its goal pays its Koins once.
 
 using namespace mk11;
 
@@ -135,6 +137,59 @@ namespace {
     }
 }
 
+namespace {
+    // DailyChallengeObject: challenge info at +24, DailyChallengeGOSData (pimpl) at +80 with the id string at +8.
+    // OnlineDailyChallengeInfo: current +32, goal +36, queued increments (TArray<int>) at +56 / count +64.
+    const char* ChallengeId(u8* object) {
+        u8* gos = *reinterpret_cast<u8**>(object + 80);
+        return gos ? reinterpret_cast<const game::NRSString*>(gos + 8)->c_str() : "";
+    }
+
+    // The Koins for challenge "offline-daily-<day>-<slot>".
+    int Reward(const char* id) {
+        if (strncmp(id, "offline-daily-", 14) != 0) return 0;
+        char* end = nullptr;
+        long long day = strtoll(id + 14, &end, 10);
+        if (!end || *end != '-') return 0;
+        long slot = strtol(end + 1, nullptr, 10);
+        if (slot < 0 || slot >= PerDay) return 0;
+        int picks[PerDay];
+        Pick(day, picks);
+        return Pool[picks[slot]].koins;
+    }
+}
+
+HOOK_DEFINE_TRAMPOLINE(ChallengeUpdate) {
+    static void Callback(u8* object, void* player) {
+        Orig(object, player);
+        u8* info = *reinterpret_cast<u8**>(object + 24);
+        const char* id = ChallengeId(object);
+        if (!info || strncmp(id, "offline-daily-", 14) != 0) return;
+        s32& queued = *reinterpret_cast<s32*>(info + 64);
+        const s32* increments = *reinterpret_cast<s32**>(info + 56);
+        s32& current = *reinterpret_cast<s32*>(info + 32);
+        s32 goal = *reinterpret_cast<s32*>(info + 36);
+        if (queued <= 0 || !increments) return;
+        int before = current;
+        for (s32 i = 0; i < queued; i++) current += increments[i];
+        queued = 0;
+        if (current > goal) current = goal;
+        char key[80], value[24];
+        store::Batch storeBatch;
+        Key(key, sizeof(key), id, "");
+        snprintf(value, sizeof(value), "%d", current);
+        store::Put(key, value);
+        Log("daily: %s %d -> %d / %d", id, before, current, goal);
+        Key(key, sizeof(key), id, "/done");
+        if (current >= goal && !store::Get(key)) {
+            int koins = Reward(id);
+            store::Put(key, "1");
+            wallet::Set("Exp_Koins", wallet::Get("Exp_Koins") + koins);
+            Log("daily: %s completed, %d Koins", id, koins);
+        }
+    }
+};
+
 // The main menu loop runs whenever the main menu is up: the challenges are (re)loaded once a day.
 HOOK_DEFINE_TRAMPOLINE(MainMenuLoop) {
     static void Callback(void* vm) {
@@ -197,6 +252,7 @@ namespace mk11::daily {
 
     void Install() {
         MainMenuLoop::InstallAtOffset(off::MKS_MainMenu_MainMenuLoop);
+        ChallengeUpdate::InstallAtOffset(off::DailyChallengeObject_DailyChallengeUpdate);
         // The Kombat Kard (ZL, where the challenges are) loads the Nintendo network service account data first
         // (OnlineNX64UserData::LoadNSAData), which fails offline: "You must be connected..." and the Kard
         // closes. Offline it carries on as if the data had loaded.
