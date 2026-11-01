@@ -4,7 +4,8 @@ An exlaunch module (`subsdk9`) that lets Mortal Kombat 11 Ultimate 1.0.26 on Swi
 (title 0100F2200C984000, build ID 4F7AB1A3EEFC7EB2) enter, play and save the Krypt with no
 server. Krypt progress and the Koins/Souls/Hearts wallet are stored on the SD card in
 `sdmc:/mk11offline/`. It can also add any gear or augment to your inventory through a give list
-(`sdmc:/mk11offline/give.txt`). Online modes and Time Krystals are not touched.
+(`sdmc:/mk11offline/give.txt`). Online modes are not touched and paid DLC is never unlocked. Time Krystals can be earned offline
+(level-ups, Krypt chests) and spent in the offline store.
 
 The status, design and open problems are in [NOTES.md](NOTES.md).
 
