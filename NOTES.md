@@ -259,16 +259,15 @@ Item notes:
 - `NRS::FailAssert` is hooked to log assert messages (e.g. "Unable to load file X, failed to find import: Y").
 
 ## Player 1 as CPU (autoplay.cpp, `p1_cpu=1`)
-- Fight scripts call `FGAIGameInterface::CheckForDrones` at round start; it turns every player whose
-  `PLAYER_INFO` +56 bit 0 is set into an AI drone (`TurnPlayerIntoDrone`). The hook sets that bit for player 1.
-  Works in local versus and Klassic Towers (including the Kronika boss setup).
-- Player 1's controller stays with the AI drone after the match, so the menus after it ignore the controller.
-  It is handed back (`FGAIGameInterface::TurnDroneIntoPlayer`) at `UIFightHUD::BuildOnEndOfMatchFade`; doing it at
-  `AIFighterInfo::TurnUserOwnedDronesIntoPlayers` (during the death ender) stalled the match.
-  `AIGameInterface::TurnPlayerIntoDrone` binds the player to a spare virtual gamepad and forgets the physical one
-  (virtual pad +16 cleared), so the physical pad is remembered and bound again after `TurnDroneIntoPlayer`.
-- **Open:** the end of match menu still ignores the controller after a p1_cpu match (tested 2026-11-01; the
-  rebinding runs). Close the game from HOME after such a match. Fighting itself works.
+- Fight scripts call `FGAIGameInterface::CheckForDrones` at round start. A player whose `CharacterDefinition` is
+  marked user-owned AI (+81 bit 2, `SetIsUserOwnedAI`; the game's own AI fighter modes) becomes a drone through
+  `TurnPlayerIntoUserOwnedAI`, which keeps the physical pad linked from the virtual one (+16); the game hands
+  it back after the match. `p1_cpu=1` marks player 1 that way. Tested in local versus (Klassic Towers was
+  tested with the earlier plain-CPU version only).
+- The first version set `PLAYER_INFO` +56 bit 0 (plain CPU) instead: `TurnPlayerIntoDrone` then forgot the
+  physical pad, and the end of match menu ignored the controller even after rebinding it. Fixed 2026-11-02:
+  two Scorpion vs Sub-Zero matches (Retry between them), the end menu answered, Quit returned to the main menu.
+  The old hand-back at `UIFightHUD::BuildOnEndOfMatchFade` stays as a fallback and clears the flag.
 
 ## Move lists (movelist.cpp)
 - The pause menu move list of Cyrax, Sektor and Kronika is a "PLACEHOLDER" line. The move list script fills a page

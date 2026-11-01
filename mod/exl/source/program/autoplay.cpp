@@ -5,11 +5,12 @@
 #include "autoplay.hpp"
 
 // p1_cpu=1: player 1 is CPU-controlled. Fight scripts call FGAIGameInterface::CheckForDrones at the start of
-// each round, which turns every player whose PLAYER_INFO +56 bit 0 (the CPU flag) is set into an AI drone;
-// player 1 gets that flag first. Player 1 gets the controller back when the end of match menu is shown
-// (UIFightHUD::BuildOnEndOfMatchFade), or that menu would not answer it; earlier, during the match's ending
-// choreography, the match stalls. Becoming a drone binds the player to a spare virtual gamepad and forgets the
-// physical one (AIGameInterface::TurnPlayerIntoDrone), so that one is remembered and bound again.
+// each round. It turns a player whose CharacterDefinition is marked user-owned AI (the game's own AI fighter
+// modes) into an AI drone on a virtual gamepad that keeps a link to the physical one (virtual pad +16), and the
+// game hands that pad back after the match. Player 1's character is marked that way. Marking the player as a
+// plain CPU (PLAYER_INFO +56 bit 0) instead made a drone that forgot the physical pad, and the end of match menu
+// then ignored the controller. As a fallback, player 1 still gets the pad back when the end of match menu is
+// shown (UIFightHUD::BuildOnEndOfMatchFade).
 
 using namespace mk11;
 
@@ -17,6 +18,8 @@ namespace {
     constexpr ptrdiff_t GameInfoRef = 0xab81c18;  // -> FGGameInfo*
     constexpr ptrdiff_t PlayerCpuFlags = 56;
     constexpr ptrdiff_t PlayerGamepad = 48;  // GAMEPAD*
+    constexpr ptrdiff_t UserOwnedAIByte = 81;  // CharacterDefinition flags (GetIsUserOwnedAI: bit 2)
+    constexpr u8 UserOwnedAIBit = 0x4;
     void* s_Gamepad = nullptr;              // player 1's physical gamepad
 
     u8* Player1() {
@@ -31,8 +34,9 @@ HOOK_DEFINE_TRAMPOLINE(CheckForDrones) {
             u8* player = Player1();
             void* pad = player ? *reinterpret_cast<void**>(player + PlayerGamepad) : nullptr;
             if (pad && game::Fn<bool (*)(void*)>(off::GAMEPAD_IsPhysicalGamepad)(pad)) s_Gamepad = pad;
-            if (player && !(player[PlayerCpuFlags] & 1)) {
-                player[PlayerCpuFlags] |= 1;
+            void* def = player ? game::Fn<void* (*)(u8*)>(off::PLAYER_INFO_GetCharacterDefinition)(player) : nullptr;
+            if (def && !(static_cast<u8*>(def)[UserOwnedAIByte] & UserOwnedAIBit)) {
+                game::Fn<void (*)(void*, bool)>(off::CharacterDefinition_SetIsUserOwnedAI)(def, true);
                 Log("autoplay: player 1 is CPU-controlled (p1_cpu=1)");
             }
         }
@@ -47,6 +51,8 @@ HOOK_DEFINE_TRAMPOLINE(EndOfMatchMenu) {
         u8* player = Player1();
         if (!player) return;
         player[PlayerCpuFlags] &= ~1;
+        if (void* def = game::Fn<void* (*)(u8*)>(off::PLAYER_INFO_GetCharacterDefinition)(player))
+            game::Fn<void (*)(void*, bool)>(off::CharacterDefinition_SetIsUserOwnedAI)(def, false);
         if (game::Fn<void* (*)(u8*)>(off::PLAYER_INFO_GetAIDrone)(player)) {
             game::Fn<void (*)(u8*)>(off::FGAIGameInterface_TurnDroneIntoPlayer)(player);
             if (s_Gamepad && !*reinterpret_cast<void**>(player + PlayerGamepad))
