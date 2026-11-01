@@ -14,6 +14,7 @@
 #include "shop.hpp"
 #include "roster.hpp"
 #include "autoplay.hpp"
+#include "movelist.hpp"
 #include "system_dialogs.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -544,6 +545,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     shop::Install();
     roster::Install();
     autoplay::Install();
+    movelist::Install();
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);
     MoviePlay::InstallAtOffset(off::MoviePlayer_Movie_Play);

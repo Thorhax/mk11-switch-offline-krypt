@@ -237,6 +237,19 @@ Item notes:
 - Fight scripts call `FGAIGameInterface::CheckForDrones` at round start; it turns every player whose
   `PLAYER_INFO` +56 bit 0 is set into an AI drone (`TurnPlayerIntoDrone`). The hook sets that bit for player 1.
   Works in local versus and Klassic Towers (including the Kronika boss setup).
+- Player 1's controller stays with the AI drone after the match, so the menus after it ignore the controller.
+  It is handed back (`FGAIGameInterface::TurnDroneIntoPlayer`) at `UIFightHUD::BuildOnEndOfMatchFade`; doing it at
+  `AIFighterInfo::TurnUserOwnedDronesIntoPlayers` (during the death ender) stalled the match. The menu hand-back
+  is not tested yet.
+
+## Move lists (movelist.cpp)
+- The pause menu move list of Cyrax, Sektor and Kronika is a "PLACEHOLDER" line. The move list script fills a page
+  with `UIMoveListScreen::SetTotalNumMoves`, `SetLocalizedHeader(0, key)`, then `SetLocalizedMove(row, nameKey,
+  input)` (input: a 4-byte wide string; names and headers are localisation keys, unknown ones read "BUG_ME").
+  For them each page gets the user's list (Switch layout): names written into the row's label after the game
+  builds it (label element paths: move name at screen +728, header at +760), the script's other headers and
+  blank lines for those rows dropped, rows after the list blanked. The cursor only reaches the first row (the
+  script knows one move), and the move data panel shows placeholder numbers. Tested: Cyrax, Sektor.
 
 ## Tooling
 
