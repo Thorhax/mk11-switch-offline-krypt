@@ -3,7 +3,7 @@
 Goal: play the Krypt on the console with no server. MK11 Ultimate 1.0.26, title 0100F2200C984000,
 main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 
-## Status (2026-10-31, v0.3)
+## Status (2026-11-01, v0.7)
 
 | Area | State |
 |---|---|
