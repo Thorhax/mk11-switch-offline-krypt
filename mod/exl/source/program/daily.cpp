@@ -138,6 +138,10 @@ namespace {
 }
 
 namespace {
+    // Set when a challenge is completed (and paid): the list is rebuilt without it on the next main menu loop,
+    // so the Kombat Kard never offers to claim it (claiming asks Hydra and closed the game offline).
+    bool s_RefreshNeeded = false;
+
     // DailyChallengeObject: challenge info at +24, DailyChallengeGOSData (pimpl) at +80 with the id string at +8.
     // OnlineDailyChallengeInfo: current +32, goal +36, queued increments (TArray<int>) at +56 / count +64.
     const char* ChallengeId(u8* object) {
@@ -186,6 +190,7 @@ HOOK_DEFINE_TRAMPOLINE(ChallengeUpdate) {
             store::Put(key, "1");
             wallet::Set("Exp_Koins", wallet::Get("Exp_Koins") + koins);
             Log("daily: %s completed, %d Koins", id, koins);
+            s_RefreshNeeded = true;
         }
     }
 };
@@ -196,8 +201,9 @@ HOOK_DEFINE_TRAMPOLINE(MainMenuLoop) {
         static s64 s_Day = -1;
         s64 day = Today();
         void* user = game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1);
-        if (day != s_Day && Offline(user) && config::DailyChallenges()) {
+        if ((day != s_Day || s_RefreshNeeded) && Offline(user) && config::DailyChallenges()) {
             s_Day = day;
+            s_RefreshNeeded = false;
             Refresh(user, day);
         }
         Orig(vm);
@@ -232,7 +238,10 @@ namespace mk11::daily {
             }
         } else {
             const char* id = json::String(json::Find(root, "challengeId"));
-            if (json::Value* batch = json::Find(root, "reward")) {
+            char doneKey[80];
+            Key(doneKey, sizeof(doneKey), id ? id : "", "/done");
+            json::Value* batch = id && store::Get(doneKey) ? nullptr : json::Find(root, "reward");  // paid on completion
+            if (batch) {
                 char* batchText = json::Serialize(batch);
                 batch::Apply(batchText);
                 std::free(batchText);

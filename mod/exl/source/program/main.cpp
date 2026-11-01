@@ -347,7 +347,15 @@ HOOK_DEFINE_TRAMPOLINE(HydraPost) {
                                       const void* done, bool flag) {
         game::HydraHandle daily;
         if (endpoint && daily::AnswerPost(endpoint->c_str(), body, done, &daily)) return daily;
-        if (!s_AnswerBatchPost) return Orig(userHandle, endpoint, body, done, flag);
+        if (!s_AnswerBatchPost) {
+            // Requests nothing here answers, logged to find what still needs Hydra.
+            void* user = game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1);
+            if (user && !game::Fn<bool (*)(void*)>(off::FGUserEntity_IsConnectedToHydra)(user)) {
+                game::NRSString text = body && body->value ? game::ToJsonString(body->value) : game::NRSString("");
+                Log("hydra: unanswered post %s %.600s", endpoint ? endpoint->c_str() : "?", text.c_str());
+            }
+            return Orig(userHandle, endpoint, body, done, flag);
+        }
         s_AnswerBatchPost = false;
         char* bodyText = nullptr;
         if (body && body->value) {

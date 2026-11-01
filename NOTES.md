@@ -142,6 +142,10 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
   generating. The record's `endTime` is set from the tower's definition; records of ended towers are
   removed when Towers of Time opens. The game clock (`time()`) reads 1970
   offline, so `PlatformGetNetworkUTC` falls back to the console user clock.
+- Premier objectives: completing a tower updates its record (challengeData.currentValue), but the game went back
+  to the tower screen without reloading records, so ticks and the towers they unlock only showed after
+  re-entering Towers of Time. Changed records are injected at `UITowersMainScreen::StartScreen` now.
+  `portal_update_multiple` (global requirements, {<tower>: [commands]}) is applied to the stored records.
 - Credits: the two credits movies in `BasicLadder_PlayLadderEnding` are skipped by making `Movie_Play` report
   failure for those call sites.
 - exlaunch's trampoline pool holds 200 bytes per hook; `JitSize` was raised to 0x4000. Module code
@@ -277,6 +281,9 @@ Item notes:
   offline. The DailyChallengeUpdate hook applies the queue to the info (current +32, goal +36), stores it in
   krypt.dat (`daily/<id>`) and pays the Koins once at the goal (`daily/<id>/done`). Tested 2026-11-01: throws and
   uppercuts completed and paid. AI-only matches (p1_cpu) do not count (no human player).
+- A completed challenge used to stay listed until the next day; claiming it on the Kombat Kard asked Hydra
+  (`daily_challenge_reward`) and closed the game. The list is now rebuilt without it on the next main menu loop,
+  and a reward post for a paid challenge pays nothing.
 - Note: PLAYER_DAMAGE_TAKEN is a fraction of the health bar (float < 1 per match), not a usable test stat.
 
 ## Tooling

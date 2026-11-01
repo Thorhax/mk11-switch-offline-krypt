@@ -209,11 +209,9 @@ namespace {
         return nullptr;
     }
 
-    // Applies Hydra update commands ({updateType, path, value}) to a record.
-    void ApplyCommands(json::Value* record, const HandleArray& commands) {
-        for (s32 i = 0; i < commands.num; i++) {
-            char* text = ValueJson(commands.data[i]);
-            json::Value* command = json::Parse(text);
+    // Applies one Hydra update command ({updateType, path, value}, `text` for the log) to a record.
+    void ApplyCommand(json::Value* record, json::Value* command, const char* text) {
+        {
             const char* type = json::String(json::Find(command, "updateType"));
             const char* path = json::String(json::Find(command, "path"));
             json::Value* value = json::Find(command, "value");
@@ -228,6 +226,15 @@ namespace {
                     json::SetInteger(record, path, result) ? "ok" : "path not found");
             } else
                 Log("portals: command not applied: %.300s", text ? text : "(none)");
+        }
+    }
+
+    // Applies Hydra update commands to a record.
+    void ApplyCommands(json::Value* record, const HandleArray& commands) {
+        for (s32 i = 0; i < commands.num; i++) {
+            char* text = ValueJson(commands.data[i]);
+            json::Value* command = json::Parse(text);
+            ApplyCommand(record, command, text);
             json::Destroy(command);
             game::Free(text);
         }
@@ -484,6 +491,27 @@ HOOK_DEFINE_TRAMPOLINE(NetworkTime) {
     }
 };
 
+// After a tower the game goes back to the tower screen without loading the tower records again, so
+// objectives completed offline (and the towers they unlock) only showed after re-entering Towers of Time.
+// Changed records are handed to the game whenever the tower screen starts.
+HOOK_DEFINE_TRAMPOLINE(TowersScreenStart) {
+    static void Callback(void* screen) {
+        void* user = game::Fn<void* (*)(int, unsigned)>(off::GetActiveModeUser)(0, 1);
+        if (s_RecordsStale && Offline(user)) {
+            s_RecordsStale = false;
+            int count = 0;
+            struct Context { void* user; int* count; } context{ user, &count };
+            store::ForEach("portal/", [](const char* key, const char* json, void* c) {
+                auto* ctx = static_cast<Context*>(c);
+                if (Inject(ctx->user, json)) (*ctx->count)++;
+                else Log("portals: %s not refreshed", key);
+            }, &context);
+            Log("portals: %d tower record(s) refreshed for the tower screen", count);
+        }
+        Orig(screen);
+    }
+};
+
 HOOK_DEFINE_TRAMPOLINE(CalendarCreatePortals) {
     static void Callback(void* user, void* portals) {
         if (Offline(user)) EnsureCalendarRecords(user);
@@ -593,8 +621,37 @@ HOOK_DEFINE_TRAMPOLINE(PortalUpdateMultiple) {
     static game::HydraHandle Callback(void* user, const game::OnlineValueHandle* data) {
         if (!Offline(user)) return Orig(user, data);
         HandleArray none{ nullptr, 0 };
+        store::Batch storeBatch;
         RecordRequest("UpdateMultiplePortals", nullptr, nullptr, nullptr, 0, none, data ? data->value : nullptr);
-        Log("portals: UpdateMultiplePortals recorded, not applied yet");
+        // Global requirements (Premier tower objectives counted across towers, MK11PortalInfo::
+        // GetPendingGlobalRequirementUpdates): {<tower>: [commands]} for each tower with queued commands.
+        char* text = ValueJson(data ? data->value : nullptr);
+        json::Value* towers = text ? json::Parse(text) : nullptr;
+        for (size_t t = 0; t < json::Members(towers); t++) {
+            const char* names[] = { json::KeyAt(towers, t) };
+            json::Value* commands = json::MemberAt(towers, t);
+            char key[128];
+            json::Value* record = LoadRecord(names, 1, key, sizeof(key));
+            if (!record) {
+                Log("portals: UpdateMultiplePortals: no record for %s", names[0]);
+                continue;
+            }
+            for (size_t i = 0; i < json::Count(commands); i++) {
+                json::Value* command = json::At(commands, i);
+                char* commandText = json::Serialize(command);
+                ApplyCommand(record, command, commandText);
+                std::free(commandText);
+            }
+            if (char* saved = json::Serialize(record)) {
+                store::Put(key, saved);
+                std::free(saved);
+                s_RecordsStale = true;
+            }
+            Log("portals: UpdateMultiplePortals %s: %zu command(s) applied", key, json::Count(commands));
+            json::Destroy(record);
+        }
+        json::Destroy(towers);
+        game::Free(text);
         game::HydraHandle reply;
         hydra::CompletedReply(&reply, nullptr);
         return reply;
@@ -723,6 +780,7 @@ namespace mk11::portals {
         PortalUpdate::InstallAtOffset(off::MK11PortalSSC_UpdatePortal);
         PortalEventUpdate::InstallAtOffset(off::MK11PortalSSC_UpdatePortalEvent);
         PortalUpdateMultiple::InstallAtOffset(off::MK11PortalSSC_UpdateMultiplePortals);
+        TowersScreenStart::InstallAtOffset(off::UITowersMainScreen_StartScreen);
         CalendarCreatePortals::InstallAtOffset(off::MK11PortalInfo_CreateCalendarPortals);
         OnlinePortalCreateEvents::InstallAtOffset(off::MK11OnlinePortalObj_CreateEventsAndStages);
         NetworkTime::InstallAtOffset(off::DateTime_PlatformGetNetworkUTC);
