@@ -44,7 +44,9 @@ Release copies: `mod/releases/v0.6-xp/` (current), `mod/releases/v0.5-towers-of-
 
 - `krypt.dat`: the Krypt progress, tower records (`portal/<name>`) and the wallet, one `key<TAB>json` line
   each. Readable and editable. It is written once per reward batch / save (store::Batch), not per value.
-  `krypt.bak` is the previous version. The wallet lines are `wallet/Exp_Koins`, `wallet/Exp_SoulFragments`,
+  `krypt.bak` is the previous version. `backups/` holds krypt.dat as it was at each game start
+  (`krypt-<date>-<time>.dat`, newest 10) and at the first start of each day (`daily-<date>.dat`, newest 14);
+  dates are the console clock's (this console's reads 2003). To restore one, copy it over krypt.dat with the game closed. The wallet lines are `wallet/Exp_Koins`, `wallet/Exp_SoulFragments`,
   `wallet/Exp_BrutalityHearts`, and one `wallet/<item>` line per crafting material or Konsumable
   (e.g. `wallet/CopperPlating`).
 - `inventory_batches.jsonl`, `portal_requests.jsonl`: every reward batch / tower request, one per line;

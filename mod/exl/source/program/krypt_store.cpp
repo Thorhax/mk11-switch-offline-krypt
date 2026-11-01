@@ -9,8 +9,14 @@
 namespace nn::fs {
     Result DeleteFile(char const* path);
     Result RenameFile(char const* from, char const* to);
+    Result CreateDirectory(char const* path);
+    Result OpenDirectory(DirectoryHandle* outHandle, char const* path, s32 openMode);
+    Result ReadDirectory(s64* outEntryCount, DirectoryEntry* outEntries, DirectoryHandle handle, s64 entryBufferLength);
+    void CloseDirectory(DirectoryHandle handle);
     void SetEnabledAutoAbort(bool enabled);
 }
+
+extern "C" u32 SdkUserClockGetCurrentTime(s64* posixTime) asm("_ZN2nn4time23StandardUserSystemClock14GetCurrentTimeEPNS0_9PosixTimeE");
 
 namespace mk11::store {
 
@@ -70,6 +76,72 @@ namespace mk11::store {
             e->jsonLen = n;
         }
 
+        // Backups of krypt.dat as it was when the game started: backups/krypt-<date>-<time>.dat for each start
+        // (newest KeepStarts kept) and backups/daily-<date>.dat for the first start of each day (newest
+        // KeepDays kept). Dates come from the console clock.
+        constexpr const char* BackupDir = "mk11sd:/mk11offline/backups";
+        constexpr int KeepStarts = 10;
+        constexpr int KeepDays = 14;
+
+        bool WriteNewFile(const char* path, const char* data, s64 size) {
+            if (R_FAILED(nn::fs::CreateFile(path, size))) return false;  // also when it exists
+            nn::fs::FileHandle h;
+            if (R_FAILED(nn::fs::OpenFile(&h, path, nn::fs::OpenMode_Write))) return false;
+            bool ok = R_SUCCEEDED(nn::fs::WriteFile(h, 0, data, size, nn::fs::WriteOption::CreateOption(nn::fs::WriteOptionFlag_Flush)));
+            nn::fs::CloseFile(h);
+            return ok;
+        }
+
+        // Deletes the oldest backups whose names start with `prefix` until `keep` remain (names sort by date).
+        void Prune(const char* prefix, int keep) {
+            constexpr int Max = 64;
+            static char names[Max][48];
+            static nn::fs::DirectoryEntry entry;
+            int count = 0;
+            nn::fs::DirectoryHandle dir;
+            if (R_FAILED(nn::fs::OpenDirectory(&dir, BackupDir, nn::fs::OpenDirectoryMode_File))) return;
+            s64 read = 0;
+            size_t pl = strlen(prefix);
+            while (count < Max && R_SUCCEEDED(nn::fs::ReadDirectory(&read, &entry, dir, 1)) && read == 1)
+                if (strncmp(entry.m_Name, prefix, pl) == 0 && strlen(entry.m_Name) < sizeof(names[0]))
+                    strcpy(names[count++], entry.m_Name);
+            nn::fs::CloseDirectory(dir);
+            while (count > keep) {
+                int oldest = 0;
+                for (int i = 1; i < count; i++)
+                    if (strcmp(names[i], names[oldest]) < 0) oldest = i;
+                char path[96];
+                snprintf(path, sizeof(path), "%s/%s", BackupDir, names[oldest]);
+                nn::fs::DeleteFile(path);
+                strcpy(names[oldest], names[--count]);
+            }
+        }
+
+        void Backup(const char* data, s64 size) {
+            s64 seconds = 0;
+            if (SdkUserClockGetCurrentTime(&seconds) != 0 || seconds <= 0) seconds = 0;
+            s64 days = seconds / 86400 + 719468, rest = seconds % 86400;
+            s64 era = days / 146097, doe = days - era * 146097;
+            s64 yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+            s64 doy = doe - (365 * yoe + yoe / 4 - yoe / 100), mp = (5 * doy + 2) / 153;
+            int day = doy - (153 * mp + 2) / 5 + 1, month = mp < 10 ? mp + 3 : mp - 9;
+            int year = yoe + era * 400 + (month <= 2);
+            char date[16], path[96];
+            snprintf(date, sizeof(date), "%04d%02d%02d", year, month, day);
+
+            nn::fs::SetEnabledAutoAbort(false);
+            nn::fs::CreateDirectory(BackupDir);
+            snprintf(path, sizeof(path), "%s/krypt-%s-%02d%02d%02d.dat", BackupDir, date, (int)(rest / 3600), (int)(rest / 60 % 60), (int)(rest % 60));
+            bool start = WriteNewFile(path, data, size);
+            snprintf(path, sizeof(path), "%s/daily-%s.dat", BackupDir, date);
+            bool daily = WriteNewFile(path, data, size);
+            Prune("krypt-", KeepStarts);
+            Prune("daily-", KeepDays);
+            nn::fs::SetEnabledAutoAbort(true);
+            Log("store: backup %s-%02d%02d%02d %s%s", date, (int)(rest / 3600), (int)(rest / 60 % 60), (int)(rest % 60),
+                start ? "written" : "FAILED", daily ? ", first of the day" : "");
+        }
+
         void LoadLocked() {
             s_Loaded = true;
             if (!MountSd()) return;
@@ -104,6 +176,7 @@ namespace mk11::store {
                 if (Entry* e = Find(p, tab - p, true)) SetJson(e, tab + 1, nl - tab - 1);
                 p = nl + 1;
             }
+            if (s_Count) Backup(buf, size);
             game::Free(buf);
             Log("store: loaded %zu entries (%lld bytes)", s_Count, (long long)size);
         }
