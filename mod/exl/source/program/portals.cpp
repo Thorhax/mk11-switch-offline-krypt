@@ -576,9 +576,15 @@ HOOK_DEFINE_TRAMPOLINE(PortalUpdate) {
             return reply;
         }
         ApplyCommands(record, *commands);
-        Commit(user, record, key, &reply);
+        // A completed Premier objective set ("portal_quest_completed", MK11PortalObj::CompletePortalQuestObjective)
+        // carries its rewards in the extra data's unlocks, like a completed tower.
+        char* extraText = ValueJson(data ? data->value : nullptr);
+        char* rewards = extraText && strstr(extraText, "\"unlocks\"") ? GrantUnlocks(extraText) : nullptr;
+        Commit(user, record, key, &reply, rewards);
+        game::Free(rewards);
+        game::Free(extraText);
         json::Destroy(record);
-        Log("portals: UpdatePortal %s: %d command(s) applied", key, commands->num);
+        Log("portals: UpdatePortal %s: %d command(s) applied%s", key, commands->num, rewards ? ", rewards granted" : "");
         return reply;
     }
 };

@@ -26,7 +26,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | "Unable to sync your online inventory" (Kustomize, fights) | Removed: the Yes/No boxes are answered Yes without being shown |
 | Klassic Towers | Works offline (tested 2026-10-31, Novice x4): full mode, tower record on the SD card (`portal/KlassicTowers` in krypt.dat), completions and best score kept, end-of-fight and completion rewards granted |
 | End-of-match rewards (all modes) | Works: FGOnlineInventoryBatch::Post applied locally and answered, so totals no longer snap back |
-| Towers of Time | Works offline (tested 2026-10-31: Premier tower "Terror Squad", first tower): the menu opens, the current calendar towers are generated from the portal definition script, progress, best score, objective tick and rewards (including gear) are kept. Premier objective rewards (all 5 towers) and UpdateMultiplePortals (global requirements) are untested / only logged |
+| Towers of Time | Works offline (tested 2026-10-31: Premier tower "Terror Squad", first tower): the menu opens, the current calendar towers are generated from the portal definition script, progress, best score, objective tick and rewards (including gear) are kept. Premier objective ticks, tower unlocks and the final objective reward work (Chittering Treasures, all 5 towers, 2026-11-01) |
 | Tower credits | Skipped after each character ending (`skip_tower_credits=1`, the default) |
 | Tower HIGH SCORE | Shown offline from the stored best scores; RANK stays N/A (online leaderboard) |
 | Online modes | Unchanged: the patches only affect the Krypt entry path and the offline prompts above |
@@ -146,6 +146,11 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
   to the tower screen without reloading records, so ticks and the towers they unlock only showed after
   re-entering Towers of Time. Changed records are injected at `UITowersMainScreen::StartScreen` now.
   `portal_update_multiple` (global requirements, {<tower>: [commands]}) is applied to the stored records.
+- Premier objective reward: finishing the last tower sends `UpdatePortal` "portal_quest_completed" whose extra
+  data carries `unlocks` (Koins + `add_game_item` item sequences). The hook now grants them (`GrantUnlocks`) and
+  commits them with the record. Before this fix the reward was dropped; the missed Chittering Treasures reward
+  (62,500 Koins + D'Vorah True Bug / Kollector Mercenary skins) was replayed via `replay_batch.json` and
+  verified in game 2026-11-01.
 - Credits: the two credits movies in `BasicLadder_PlayLadderEnding` are skipped by making `Movie_Play` report
   failure for those call sites.
 - exlaunch's trampoline pool holds 200 bytes per hook; `JitSize` was raised to 0x4000. Module code
