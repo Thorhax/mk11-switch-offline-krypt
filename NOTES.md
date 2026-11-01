@@ -241,6 +241,14 @@ Item notes:
   null) and the game has no art for them (no `cell_<Name>` in ui_ps_CharacterImages, no `<Name>_P1` in
   ui_ps_Versus_Jpegs), so their cells look empty and the large art keeps the previous fighter.
   Where: Cyrax top-left (up from Joker), Sektor top-right (up from Spawn), Kronika bottom-right (right of Rain).
+- Research for visible cells (2026-11-02, not built): the grid widget's cells are an array (+112, count +120)
+  filled by `UIGridSelectWidget::CreateFocusCellSequence(prefix, count, start)` from Flash elements named by
+  cell number (`cell_%d` / `Cell_%d` patterns; the player select override adds `.highlightP1/P2`). New cells would
+  have to be created in the live movie: Scaleform `Value::ObjectInterface::AttachMovie`, `Movie::CreateObject`,
+  `SetDisplayInfo` are linked, but `UIElement` changes (+24 value handle) are queued as deferred Scaleform work
+  (`EnqueueDeferredScaleformWork`), so creation must run on that thread; the cell symbol's AS3 class name is
+  only known at runtime (the UI movies are inside compressed `.xxx` packages). Portrait art for the three does
+  not exist and would have to be borrowed (e.g. Konsumable assist icons for Cyrax/Sektor).
 - How: PlayerSelect.mko is compiled to native code (`MKS_PlayerSelect::*`). Its roster `charTable` (37 rows of
   0x30: row, col, `CHAR_<Name>`, portrait, key, ...) is reached through `MKS::VM::GetStackAddr(0x2810000000001288)`;
   that call returns a 40-row copy (extra rows copy Scorpion's tail fields), and the 23 row-count constants
