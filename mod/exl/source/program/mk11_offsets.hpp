@@ -224,6 +224,7 @@ namespace mk11::off {
     constexpr ptrdiff_t UITowersMainScreen_StartScreen = 0x1ee8b00; // UITowersMainScreen::StartScreen()
     constexpr ptrdiff_t KollectorTradeUnlockPayloadArg = 0x214bfd8;
     constexpr ptrdiff_t KryptRewardUnlockPayloadArg = 0x212b3a4;
+    constexpr ptrdiff_t KryptOnRewardUnlockPayloadArg = 0x213740c;
     constexpr ptrdiff_t PLAYER_INFO_GetCharacterDefinition = 0x24a3ac0; // PLAYER_INFO::GetCharacterDefinition() const
     constexpr ptrdiff_t CharacterDefinition_SetIsUserOwnedAI = 0x204bb64; // CharacterDefinition::SetIsUserOwnedAI(bool)
     constexpr ptrdiff_t MKS_MoveListScreen_FillMoveCells = 0x5b7ad30; // MKS_MoveListScreen::MoveList_FillMoveCells(MKS::VM*)
