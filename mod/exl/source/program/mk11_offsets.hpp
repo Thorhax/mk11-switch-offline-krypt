@@ -237,4 +237,7 @@ namespace mk11::off {
     constexpr ptrdiff_t RawImage_Create = 0x140b660; // Scaleform::Render::RawImage::Create(Scaleform::Render::ImageFormat, unsigned int, Scaleform::Render::Size<unsigned int> const&, unsigned int, Scaleform::MemoryHeap*, Scaleform::Render::ImageUpdateSync*)
     constexpr ptrdiff_t ScaleformRefCount_AddRef = 0x139fd70; // Scaleform::RefCountImpl::AddRef()
     constexpr ptrdiff_t ScaleformRefCount_Release = 0x139fd90; // Scaleform::RefCountImpl::Release()
+    constexpr ptrdiff_t PLAYER_INFO_GetLadderEnding = 0x24aa1b0; // PLAYER_INFO::GetLadderEnding(char*, int) const
+    constexpr ptrdiff_t GetCharacterLadderEnding = 0x24ad7c8; // GetCharacterLadderEnding(char const*, char*, int)
+    constexpr ptrdiff_t FTableOfContents_ParseFromBuffer = 0x10eeeb4; // FTableOfContents::ParseFromBuffer(char*)
 }

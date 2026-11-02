@@ -16,6 +16,7 @@
 #include "autoplay.hpp"
 #include "movelist.hpp"
 #include "selectart.hpp"
+#include "endings.hpp"
 #include "daily.hpp"
 #include "system_dialogs.hpp"
 #include <cstdio>
@@ -488,7 +489,10 @@ HOOK_DEFINE_TRAMPOLINE(MoviePlay) {
             Log("tower ending: credits movie %s skipped (skip_tower_credits=1)", name ? name : "?");
             return false;
         }
-        return Orig(name, skipButtons, bits2, done, index, a5, a6, pad, a8);
+        bool started = Orig(name, skipButtons, bits2, done, index, a5, a6, pad, a8);
+        size_t n = name ? strlen(name) : 0;
+        if (n > 7 && strcmp(name + n - 7, "_Ending") == 0) Log("tower ending: movie %s %s", name, started ? "started" : "did not start");
+        return started;
     }
 };
 
@@ -559,6 +563,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     autoplay::Install();
     movelist::Install();
     selectart::Install();
+    endings::Install();
     daily::Install();
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);

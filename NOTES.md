@@ -315,6 +315,24 @@ Item notes:
   …)`, rows at screen +0x200 / +0x250 per player, name in "FocusText0.Text" under the path at +808): it shows
   the fighter's special moves (fighter found from the player's character definition). Tested: Cyrax.
 
+## Tower endings for the extra fighters (endings.cpp, 2026-11-02)
+- A tower's character ending is a movie: `MKS_Ladder::BasicLadder_PlayLadderEnding` plays `Ladder_Ending` (the
+  game's Kronika defeat), then `PLAYER_INFO::GetLadderEnding` = character key + `_Ending` (Cyrax: `CYR_Ending`
+  already), then the two credits movies (skipped). Movies are `../MOVIES/<name>.mp4` (`mk_get_movie_filepath`),
+  in the romfs as `rom:/Movies/` (`rom:/NX64TOC.txt` lists `..\Movies\SCO_Ending.mp4` etc.).
+- Format of the game's endings (SCO_Ending.mp4): H.264 High L3.1 1280x720 29.97 fps (2 B-frames, 1 ref), six AAC
+  LC stereo 48 kHz tracks (eng fra deu ita por spa) before the video track. tools/make_ending.py writes that.
+- New movies go in with LayeredFS (`atmosphere/contents/0100F2200C984000/romfs/Movies/CYR_Ending.mp4`), but the
+  engine only opens files in its table of contents: without an entry the player waits on a black screen
+  forever. `FTableOfContents::AddEntry` / `AddToTOC` after boot puts the file in the table (`ExistsInTOC` 1) and the
+  movie still does not start, so `FTableOfContents::ParseFromBuffer` is hooked instead and the main TOC text gets
+  `<size> 21 ..\Movies\<KEY>_Ending.mp4 55` for each ending found (chunk and flags as the game's endings).
+- Tested 2026-11-02: Klassic Tower Novice with Cyrax (AI fighter, Very Easy): Ladder_Ending, then the user's
+  CYR_Ending, credits skipped, results. Kollection > Endings lists only the base roster (its view uses
+  `PlayMovieFromMainMenu` with names from its own list).
+- Subtitles: the game draws prerendered subtitles by movie name (`mk_execute_prerendered_subtitles`); there are
+  none for CYR_Ending, so the video carries its own.
+
 ## Kombat Kard and Daily Challenges (daily.cpp)
 - ZL opens `PlayerProfileModalDriver::RunInputLoop`, which loads the Nintendo network service account data
   (`OnlineNX64UserData::LoadNSAData`, fails offline: "You must be connected...") and then waits on "Connecting to

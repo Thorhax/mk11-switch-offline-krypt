@@ -22,6 +22,10 @@ namespace mk11::game {
         NRSString() = default;
         explicit NRSString(const char* s) { Fn<void (*)(NRSString*, const char*)>(off::NRSString_FromCStr)(this, s); }
         NRSString(const NRSString&) = delete;
+        NRSString(NRSString&& other) : data(other.data), num(other.num), max(other.max) {
+            other.data = nullptr;
+            other.num = other.max = 0;
+        }
         ~NRSString() {
             num = 0;
             Fn<void (*)(NRSString*)>(off::TArrayBase_Dtor)(this);

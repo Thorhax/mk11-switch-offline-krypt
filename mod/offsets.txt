@@ -276,3 +276,6 @@ FGFxImageLoader_LoadProtocolImage = FGFxMovie::FGFxImageLoader::LoadProtocolImag
 RawImage_Create = Scaleform::Render::RawImage::Create(Scaleform::Render::ImageFormat, unsigned int, Scaleform::Render::Size<unsigned int> const&, unsigned int, Scaleform::MemoryHeap*, Scaleform::Render::ImageUpdateSync*)
 ScaleformRefCount_AddRef = Scaleform::RefCountImpl::AddRef()
 ScaleformRefCount_Release = Scaleform::RefCountImpl::Release()
+PLAYER_INFO_GetLadderEnding = PLAYER_INFO::GetLadderEnding(char*, int) const
+GetCharacterLadderEnding = GetCharacterLadderEnding(char const*, char*, int)
+FTableOfContents_ParseFromBuffer = FTableOfContents::ParseFromBuffer(char*)
