@@ -262,9 +262,11 @@ Item notes:
   game's portraits. Versus art: roster.cpp no longer just skips the missing `<Name>_P1/_P2.jpg`: a stand-in
   (Scorpion's) decodes so the element still asks for its image, and the request gets the file's image. The
   1024-wide image is placed from its left edge: player 1 at x 0 (0.665 px per texel, about 650 px visible beside
-  the grid), player 2 at about x 430, so player 2 needs 256 more columns to reach the screen edge (the file's
-  left padding, mirrored to the right). Kronika has no art file yet; scaling her 512x512 announcer icon on the
-  versus image element (a 2560 x 2160 box) put it off screen, so her versus art stays as it was.
+  the grid), player 2 at about x 430 with only x 840 on visible, where the game's own art has the face; player 2's
+  image is the picture mirrored and moved right by 480 black columns (face at about x 1090, reaching past the
+  screen edge). All three fighters have art from the user (artwork/, not committed; converted copies in
+  data/art/). Scaling Kronika's 512x512 announcer icon on the versus image element (a 2560 x 2160 box) put it
+  off screen; that fallback was dropped.
 - Dead ends while getting there: a second trampoline on `UIImageElement::SetTextureDecodeAsync` (already hooked in
   roster.cpp) looped forever; creating a `UIElement` for `Cell_<n>` from inside an invoke crashed in
   `AS3::MovieRoot::GetVariable`; reading Flash values from a `gotoAndPlay` ("GainFocus") hook crashed.

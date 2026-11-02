@@ -4,17 +4,15 @@
     python3 tools/make_art.py <picture> <Cyrax|Sektor|Kronika> <cell|large> [--focus X,Y] [--out DIR]
 
 cell:  the grid portrait, 128 x 256 (the cell frame shows about the top 200 rows).
-large: the versus art beside the grid, 1024 x 1088 (about the left 650 columns show beside the grid, so the
-       face belongs in the left half). Player 2 gets a mirrored copy, which needs 256 more columns to reach
-       the screen edge: the file carries them on the left as a dark, blurred reflection of the picture's
-       left edge (player 1 skips them).
+large: the versus art beside the grid, 1024 x 1088. Player 1 shows about the left 650 columns, player 2 (a
+       mirrored copy) about the middle 650, so the face belongs near the middle.
 
 The picture is scaled to cover the target and cropped around --focus (fractions of the picture's width and
 height, default 0.5,0.3: centred, nearer the top, where a face usually is). The output is
 <DIR>/<Name>_<cell|large>.art (default DIR: ./art); copy it to sdmc:/mk11offline/art/ on the SD card.
 
-Format: "MK11ART2", width, height and left padding as little-endian u32, then width * height RGBA pixels,
-row by row.
+Format: "MK11ART2", width, height and a count of left columns to leave out (0 here) as little-endian u32, then
+width * height RGBA pixels, row by row.
 Needs Pillow (pip install Pillow).
 """
 import argparse
@@ -22,10 +20,9 @@ import os
 import struct
 import sys
 
-from PIL import Image, ImageFilter
+from PIL import Image
 
 SIZES = {"cell": (128, 256), "large": (1024, 1088)}
-PAD = {"cell": 0, "large": 256}  # columns added on the left
 NAMES = ("Cyrax", "Sektor", "Kronika")
 
 
@@ -48,21 +45,7 @@ def main():
     y = min(max(round(fy * h - th / 2), 0), h - th)
     img = img.crop((x, y, x + tw, y + th))
 
-    pad = PAD[a.kind]
-    if pad:
-        # The picture's left edge mirrored outwards, blurred and faded to black.
-        edge = img.crop((0, 0, pad, th)).transpose(Image.FLIP_LEFT_RIGHT).filter(ImageFilter.GaussianBlur(12))
-        px = edge.load()
-        for x in range(pad):
-            k = (x + 1) / pad * 0.6  # darker further from the picture
-            for y in range(th):
-                r, g, b, _ = px[x, y]
-                px[x, y] = (int(r * k), int(g * k), int(b * k), 255)
-        wide = Image.new("RGBA", (tw + pad, th))
-        wide.paste(edge, (0, 0))
-        wide.paste(img, (pad, 0))
-        img = wide
-        tw += pad
+    pad = 0  # columns to leave out on the left (kept in the format)
 
     os.makedirs(a.out, exist_ok=True)
     path = os.path.join(a.out, f"{a.name}_{a.kind}.art")

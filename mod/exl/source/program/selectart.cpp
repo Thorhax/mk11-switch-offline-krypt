@@ -24,8 +24,7 @@ namespace nn::fs {
 // the previous fighter's stays.
 //
 // Art on the SD card: sdmc:/mk11offline/art/<Name>_cell.art (128 x 256, replaces the borrowed cell art) and
-// <Name>_large.art (1024 x 1088 for player 1; mirrored with 256 padding columns for player 2, whose image is
-// placed further right and reaches the screen edge), made with tools/make_art.py. Each image request ("img://<element>",
+// <Name>_large.art (1024 x 1088; mirrored and moved right for player 2), made with tools/make_art.py. Each image request ("img://<element>",
 // FGFxImageLoader::LoadProtocolImage) for those elements is answered with a Scaleform RawImage of the file.
 
 using namespace mk11;
@@ -141,11 +140,15 @@ namespace {
     struct ArtHeader {
         char magic[8];  // "MK11ART2"
         u32 width, height;
-        u32 pad;  // columns on the left that only the mirrored (player 2) image uses
+        u32 pad;  // columns on the left to leave out
     };
 
-    // A RawImage (R8G8B8A8) of sdmc:/mk11offline/art/<name>_<kind>.art: without its padding, or mirrored with it
-    // (the padding then reaches the right edge of the screen); null if there is none.
+    // Player 2's versus image is placed at about x 430 and shows to the right of the grid (x 840 on), where the
+    // game's own art has the face; the mirrored picture is moved right by this many (black) columns.
+    constexpr u32 Player2Shift = 480;
+
+    // A RawImage (R8G8B8A8) of sdmc:/mk11offline/art/<name>_<kind>.art, or mirrored and moved right for player 2;
+    // null if there is none.
     void* LoadArt(const char* name, const char* kind, bool mirror) {
         if (!MountSd()) return nullptr;
         char path[96];
@@ -164,20 +167,22 @@ namespace {
             head.pad >= head.width || size != (s64)(sizeof(head) + (u64)head.width * head.height * 4)) {
             Log("selectart: %s is not a valid art file", path);
         } else {
-            u32 skip = mirror ? 0 : head.pad;
+            u32 skip = head.pad;
             u32 width = head.width - skip;
-            u32 dims[2] = { width, head.height };
+            u32 shift = mirror ? Player2Shift : 0;
+            u32 dims[2] = { width + shift, head.height };
             img = game::Fn<void* (*)(u32, u32, const u32*, u32, void*, void*)>(off::RawImage_Create)(1, 1, dims, 0, nullptr, nullptr);
             u8* planes = img ? *reinterpret_cast<u8**>(static_cast<u8*>(img) + 0x38) : nullptr;  // RawImage ImageData pPlanes
             u64 pitch = planes ? *reinterpret_cast<u64*>(planes + 8) : 0;
             u8* data = planes ? *reinterpret_cast<u8**>(planes + 24) : nullptr;
-            if (!data || pitch < width * 4u) {
+            if (!data || pitch < (width + shift) * 4u) {
                 Log("selectart: no image memory for %s", path);
                 img = nullptr;  // a failed RawImage is left to the game's allocator
             } else {
                 u64 row = head.width * 4u;
                 for (u32 y = 0; y < head.height; y++) {
-                    u8* line = data + y * pitch;
+                    for (u32 x = 0; x < shift; x++) memcpy(data + y * pitch + x * 4, "\0\0\0\xff", 4);
+                    u8* line = data + y * pitch + shift * 4;
                     nn::fs::ReadFile(h, sizeof(head) + y * row + skip * 4u, line, width * 4u);
                     if (mirror)
                         for (u32 a = 0, b = width - 1; a < b; a++, b--)
@@ -187,7 +192,7 @@ namespace {
                                 line[b * 4 + c] = t;
                             }
                 }
-                Log("selectart: %s %ux%u%s", path, width, head.height, mirror ? " (mirrored)" : "");
+                Log("selectart: %s %ux%u%s", path, width + shift, head.height, mirror ? " (mirrored for player 2)" : "");
             }
         }
         nn::fs::CloseFile(h);
