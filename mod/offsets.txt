@@ -279,3 +279,6 @@ ScaleformRefCount_Release = Scaleform::RefCountImpl::Release()
 PLAYER_INFO_GetLadderEnding = PLAYER_INFO::GetLadderEnding(char*, int) const
 GetCharacterLadderEnding = GetCharacterLadderEnding(char const*, char*, int)
 FTableOfContents_ParseFromBuffer = FTableOfContents::ParseFromBuffer(char*)
+MK11KollectionInfo_KollectionInfoInit = MK11KollectionInfo::KollectionInfoInit()
+MK11KollectionInfo_RegisterItem = MK11KollectionInfo::RegisterItem(FKollectionItemInfo*)
+KollectionItem_GetLocalizedName = KollectionItem::GetLocalizedName() const

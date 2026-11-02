@@ -19,7 +19,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Forge | Works (user-tested): materials spent, result added |
 | Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize. `<slug> <amount>` lines add currencies and stackable items (v0.10, tested: Souls +1000) |
 | Time Krystals | On-console wallet (`wallet/Exp_PremiumCurrency`): earned from player level-ups (as in the normal game) and Krypt chests (`krypt_chest_krystals`, default 10 per chest), spent in the Store |
-| Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01). Their select screen cells show borrowed art, or the user's art from `sdmc:/mk11offline/art/` (cell and versus art, v0.11). Full Klassic Towers with all three completed; their own tower endings play from `romfs/Movies/` when present (v0.11); finishers disabled in their fights. Move lists in the pause menu and Quick Reference, cursor reaches every row (v0.10, tested with Cyrax) |
+| Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01). Their select screen cells show borrowed art, or the user's art from `sdmc:/mk11offline/art/` (cell and versus art, v0.11). Full Klassic Towers with all three completed; their own tower endings play from `romfs/Movies/` when present (v0.11) and are listed in Kollection > Endings; finishers disabled in their fights. Move lists in the pause menu and Quick Reference, cursor reaches every row (v0.10, tested with Cyrax) |
 | Kombat Kard (ZL) | Opens offline (2026-11-01): wallet, Kareer Stats, notifications. Daily Challenges: three a day, progress kept, Koins paid at the goal (tested: throws, uppercuts) |
 | Krypt Shrine and Kollector | Work offline (user-tested 2026-11-01): Kollector trades spend relics, gear and skin pop-ups shown (`AddUnlockMessageFromOnlinePayload` call sites pass true) |
 | Free spending (`free_currency`, `free_items`) | Optional, off by default (v0.9): `wallet::Set` ignores decreases of the four currencies / of non-`Exp_` spendables. Tested in the Store; untested for chests, the Forge and Kollector trades |
@@ -330,8 +330,14 @@ Item notes:
 - Tested 2026-11-02: Klassic Tower Novice with Cyrax, Sektor and Kronika (AI fighter, Very Easy): Ladder_Ending,
   then the user's CYR_Ending / SEK_Ending / KRO_Ending (Kronika's is a preliminary cut), credits skipped, results.
 - Replacing a video: convert it again with make_ending.py, overwrite the mp4 on the SD card and restart the game
-  (the TOC entry, with the file's size, is written at boot). Kollection > Endings lists only the base roster (its view uses
-  `PlayMovieFromMainMenu` with names from its own list).
+  (the TOC entry, with the file's size, is written at boot).
+- Kollection > Endings: the list is category 4 of the Kollection table (`UMK11KollectionItemInfo`, 0x80-byte
+  `FKollectionItemInfo`: +0x00 unlock name, +0x18 / +0x58 images, +0x38 key, +0x48 package FName, +0x68 movie,
+  +0x78 category, +0x7c child/credits bits), registered by `MK11KollectionInfo::KollectionInfoInit` each time the
+  Kollection opens. After it, each extra fighter whose movie exists gets a copy of a neighbouring entry (empty
+  unlock name = never locked, its own key and movie), registered with `RegisterItem` and moved to its place in
+  name order; `KollectionItem::GetLocalizedName` returns its name (32-bit wide text). Tested 2026-11-02: all three
+  listed (after Cetrion, Kotal Kahn, Scorpion) and play from the list. The preview images are the neighbour's.
 - Subtitles: the game draws prerendered subtitles by movie name (`mk_execute_prerendered_subtitles`); there are
   none for CYR_Ending, so the video carries its own.
 

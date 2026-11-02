@@ -105,8 +105,83 @@ HOOK_DEFINE_TRAMPOLINE(CharacterLadderEnding) {
     }
 };
 
+// Kollection > Endings is category 4 of the Kollection table (UMK11KollectionItemInfo: 0x80-byte FKollectionItemInfo
+// entries, registered into MK11KollectionInfo each time the Kollection opens). The extra fighters' endings are added as
+// copies of a game entry: +0x00 unlock name (empty = always unlocked), +0x18 / +0x58 images and +0x48 their package,
+// +0x38 key, +0x68 movie, +0x78 category. Their names come from GetLocalizedName.
+namespace {
+    constexpr s32 EndingsCategory = 4;
+
+    struct KollectionExtra {
+        const char* key;          // as in Extras
+        const char* after;        // the list entry it follows (the list is in name order)
+        const wchar_t* name;  // as the list shows names (upper case; game text is 32-bit)
+    };
+    constexpr KollectionExtra KollectionExtras[] = {
+        { "CYR", "CET", L"CYRAX" },
+        { "SEK", "SCO", L"SEKTOR" },
+        { "KRO", "KOT", L"KRONIKA" },
+    };
+    u8* s_Infos[3];  // our FKollectionItemInfo copies
+
+    void SetString(u8* field, const char* text) {
+        auto* str = reinterpret_cast<game::NRSString*>(field);
+        str->data = const_cast<char*>(text);
+        str->num = str->max = text[0] ? strlen(text) + 1 : 0;
+    }
+
+    const char* KeyOf(u8* item) {
+        u8* fi = item ? *reinterpret_cast<u8**>(item + 16) : nullptr;
+        return fi ? reinterpret_cast<game::NRSString*>(fi + 0x38)->c_str() : "";
+    }
+}
+
+HOOK_DEFINE_TRAMPOLINE(KollectionInit) {
+    static void Callback(u8* kollection) {
+        Orig(kollection);
+        u8*** items = reinterpret_cast<u8***>(kollection + EndingsCategory * 16);
+        s32* count = reinterpret_cast<s32*>(kollection + EndingsCategory * 16 + 8);
+        for (size_t k = 0; k < sizeof(KollectionExtras) / sizeof(KollectionExtras[0]); k++) {
+            const KollectionExtra& x = KollectionExtras[k];
+            static char movies[3][16];
+            snprintf(movies[k], sizeof(movies[k]), "%s_Ending", x.key);
+            if (!MovieSize(movies[k])) continue;
+            u8* model = nullptr;  // images are borrowed from the entry it follows (copied again each time: the table may be reloaded)
+            for (s32 i = 0; i < *count && !model; i++)
+                if (strcmp(KeyOf((*items)[i]), x.after) == 0) model = *reinterpret_cast<u8**>((*items)[i] + 16);
+            if (!model) continue;
+            if (!s_Infos[k]) s_Infos[k] = static_cast<u8*>(game::Malloc(0x80));
+            if (!s_Infos[k]) continue;
+            memcpy(s_Infos[k], model, 0x80);
+            SetString(s_Infos[k] + 0x00, "");
+            SetString(s_Infos[k] + 0x38, x.key);
+            SetString(s_Infos[k] + 0x68, movies[k]);
+            game::Fn<void (*)(u8*, u8*)>(off::MK11KollectionInfo_RegisterItem)(kollection, s_Infos[k]);
+            // move it from the end to its place in the list
+            s32 n = *count, at = n - 1;
+            for (s32 i = 0; i < n - 1; i++)
+                if (strcmp(KeyOf((*items)[i]), x.after) == 0) { at = i + 1; break; }
+            u8* added = (*items)[n - 1];
+            memmove(&(*items)[at + 1], &(*items)[at], (n - 1 - at) * sizeof(u8*));
+            (*items)[at] = added;
+            LogVerbose("endings: Kollection > Endings lists %s at %d", movies[k], at);
+        }
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(KollectionName) {
+    static const void* Callback(u8* item) {
+        u8* fi = item ? *reinterpret_cast<u8**>(item + 16) : nullptr;
+        for (size_t k = 0; k < sizeof(KollectionExtras) / sizeof(KollectionExtras[0]); k++)
+            if (fi && fi == s_Infos[k]) return KollectionExtras[k].name;
+        return Orig(item);
+    }
+};
+
 namespace mk11::endings {
     void Install() {
+        KollectionInit::InstallAtOffset(off::MK11KollectionInfo_KollectionInfoInit);
+        KollectionName::InstallAtOffset(off::KollectionItem_GetLocalizedName);
         ParseTOC::InstallAtOffset(off::FTableOfContents_ParseFromBuffer);
         LadderEnding::InstallAtOffset(off::PLAYER_INFO_GetLadderEnding);
         CharacterLadderEnding::InstallAtOffset(off::GetCharacterLadderEnding);

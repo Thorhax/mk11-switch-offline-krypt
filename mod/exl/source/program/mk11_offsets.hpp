@@ -240,4 +240,7 @@ namespace mk11::off {
     constexpr ptrdiff_t PLAYER_INFO_GetLadderEnding = 0x24aa1b0; // PLAYER_INFO::GetLadderEnding(char*, int) const
     constexpr ptrdiff_t GetCharacterLadderEnding = 0x24ad7c8; // GetCharacterLadderEnding(char const*, char*, int)
     constexpr ptrdiff_t FTableOfContents_ParseFromBuffer = 0x10eeeb4; // FTableOfContents::ParseFromBuffer(char*)
+    constexpr ptrdiff_t MK11KollectionInfo_KollectionInfoInit = 0x1e6836c; // MK11KollectionInfo::KollectionInfoInit()
+    constexpr ptrdiff_t MK11KollectionInfo_RegisterItem = 0x1e684cc; // MK11KollectionInfo::RegisterItem(FKollectionItemInfo*)
+    constexpr ptrdiff_t KollectionItem_GetLocalizedName = 0x1e680ec; // KollectionItem::GetLocalizedName() const
 }
