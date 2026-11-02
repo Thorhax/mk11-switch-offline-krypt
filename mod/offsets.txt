@@ -259,10 +259,11 @@ DailyChallengeSystem_CreateChallengesForUser = DailyChallengeSystem::CreateChall
 DailyChallengeObject_DailyChallengeUpdate = DailyChallengeObject::DailyChallengeUpdate(PLAYER_INFO*)
 UITowersMainScreen_StartScreen = UITowersMainScreen::StartScreen()
 # UnlockTracker::AddUnlockMessageFromOnlinePayload(payload, group, bool) in KryptExecuteStoreTrade (Kollector)
-# and MK11Krypt::ProcessPendingServerRewardRequest (chests, vases): the bool lets gear rewards that have no
+# MK11Krypt::ProcessPendingServerRewardRequest (chests, vases) and MK11Krypt::OnReward (Shrine): the bool lets gear rewards that have no
 # server-made instance in rewards.items show from their GUID (as Story fights do).
 KollectorTradeUnlockPayloadArg = 0x214bfd8
 KryptRewardUnlockPayloadArg = 0x212b3a4
+KryptOnRewardUnlockPayloadArg = 0x213740c
 PLAYER_INFO_GetCharacterDefinition = PLAYER_INFO::GetCharacterDefinition() const
 CharacterDefinition_SetIsUserOwnedAI = CharacterDefinition::SetIsUserOwnedAI(bool)
 MKS_MoveListScreen_FillMoveCells = MKS_MoveListScreen::MoveList_FillMoveCells(MKS::VM*)
