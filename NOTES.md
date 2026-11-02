@@ -19,7 +19,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Forge | Works (user-tested): materials spent, result added |
 | Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize. `<slug> <amount>` lines add currencies and stackable items (v0.10, tested: Souls +1000) |
 | Time Krystals | On-console wallet (`wallet/Exp_PremiumCurrency`): earned from player level-ups (as in the normal game) and Krypt chests (`krypt_chest_krystals`, default 10 per chest), spent in the Store |
-| Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01). Their select screen cells show borrowed art, or the user's art from `sdmc:/mk11offline/art/` (cell and versus art, v0.11). Full Klassic Towers with all three completed; their own tower endings play from `romfs/Movies/` when present (v0.11) and are listed in Kollection > Endings; finishers disabled in their fights. Move lists in the pause menu and Quick Reference, cursor reaches every row (v0.10, tested with Cyrax) |
+| Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01). Their select screen cells show borrowed art, or the user's art from `sdmc:/mk11offline/art/` (cell and versus art, v0.11). Full Klassic Towers with all three completed, and a Towers of Time tower with Kronika (2026-11-02, rewards and high score kept); their own tower endings play from `romfs/Movies/` when present (v0.11) and are listed in Kollection > Endings. Finishers: Kronika's own Fatality (Down, Down, Y, a little beyond mid-range) and Cyrax's/Sektor's uppercut Brutality work on regular fighters (user-tested 2026-11-02); finishers on the three stay blocked. Their variation cards stay blank (no loadout image; an attempt to show the cell art there did not render). Move lists in the pause menu and Quick Reference, cursor reaches every row (v0.10, tested with Cyrax) |
 | Kombat Kard (ZL) | Opens offline (2026-11-01): wallet, Kareer Stats, notifications. Daily Challenges: three a day, progress kept, Koins paid at the goal (tested: throws, uppercuts) |
 | Krypt Shrine and Kollector | Work offline (user-tested 2026-11-01/02): Kollector trades spend relics; Shrine Koin offerings give Konsumables (up to 74,000) and gear or skins (75,000 and up), granted and kept after equip and save. Gear and skin pop-ups shown for chests, Kollector and Shrine (the `AddUnlockMessageFromOnlinePayload` call sites in ProcessPendingServerRewardRequest, KryptExecuteStoreTrade and OnReward pass true). Known: Koin offerings also get the chest bonus Time Krystals |
 | Free spending (`free_currency`, `free_items`) | Optional, off by default (v0.9): `wallet::Set` ignores decreases of the four currencies / of non-`Exp_` spendables. Tested in the Store; untested for chests, the Forge and Kollector trades |
@@ -285,6 +285,15 @@ Item notes:
   data for him). `IsBrutalityAllowed`, `IsFatalityAvailable` and `IsBackgroundFatalityAvailable` return false
   while one of the three is fighting; Fatal Blows work. Klassic Tower with Cyrax (AI, p1_cpu): four fights and
   the Kronika boss fight run (2026-11-01).
+- Finishers since 2026-11-02: `IsFatalityAvailable` also allows Kronika's Fatality when she won the round against a regular
+  fighter (round winner = `FGGameInfo::GetRoundWinner` TEAM_INFO, victim = its `GetActiveOpponentInfo(0)`); her script registers
+  `KRONIKA_FATALITY_A`. `IsBrutalityAllowed` allows Cyrax and Sektor as attacker on a regular victim (uppercut Brutality).
+- Special moves: Kronika's specials are registered with the same placeholder motions (6, 0, 10, pad 0x20) as everyone's
+  universal ones and her script tests no special inputs (only strings, rolls, jumps): they are AI boss moves. `movescan.cpp`
+  logs special move and fatality registrations with verbose_log=1.
+- Variation cards: `LoadoutSelectStart` gets `CharacterLoadoutKey`s (+0x20 character key, name `CYR`/`SEK`/`KRO`); regular
+  fighters' cards get `#Transient.TextureCompressedImage_N.jpg`, the extra fighters' an empty name, and answering the card's
+  img:// request with the cell art did not make it render (element size 0). Left blank at the user's choice.
 - Keys: `CYR`, `SEK`, `KRO`. Fighting them via a swapped selection showed the selection has to change at
   `CharacterDefinition::SetCharacter` time (swapping at `PLAYER_INFO` left Sub-Zero's intro assets requested).
 - `NRS::FailAssert` is hooked to log assert messages (e.g. "Unable to load file X, failed to find import: Y").
