@@ -116,7 +116,9 @@ namespace mk11::gear {
         alignas(16) u8 source[0x30] = {};
         bool ok = game::Fn<bool (*)(void*, void*, void*, void*)>(off::InventoryManager_AddItem)(user, gear, source, ref);
         DestroyGearItem(gear);
-        Log("gear: %s (level %d) -> %s", id, level, ok ? "added" : "NOT added");
+        // FItemObject: vtable, FGuid at +8, internal name (e.g. KOL_GearC18_Level1) at +0x18.
+        const char* name = reinterpret_cast<const game::NRSString*>(static_cast<const u8*>(def) + 0x18)->c_str();
+        Log("gear: %s %s (level %d) -> %s", id, name, level, ok ? "added" : "NOT added");
         return ok;
     }
 
