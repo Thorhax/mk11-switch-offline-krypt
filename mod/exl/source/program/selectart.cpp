@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <strings.h>
 
 namespace nn::fs {
     void SetEnabledAutoAbort(bool enabled);
@@ -204,10 +205,12 @@ namespace {
 
     // Images that answer requests for an element's url. Set on the game thread, read on the Scaleform one.
     struct Answer {
-        char url[112];
+        char url[192];
         void* image;
     };
-    Answer s_Answers[ArtCount + 2];  // the three cells, then the two versus images
+    constexpr s32 CardAnswers = 8;  // variation cards (four per player)
+    Answer s_Answers[ArtCount + 2 + CardAnswers];  // the three cells, the two versus images, then variation cards
+    s32 s_Shown[2] = { -1, -1 };  // per player: the extra fighter (Arts index) whose versus art is shown, or -1
     volatile u32 s_Lock = 0;
 
     void Lock() {
@@ -250,10 +253,44 @@ namespace {
     }
 }
 
+// Variation cards (loadoutSelect ... cardN.cardImageVis.loadoutImage) get no texture for the extra fighters: they
+// show the fighter's cell art (the player's fighter is the one whose versus art is shown).
+namespace {
+    bool VariationCard(void* element, const char* path, const char* name) {
+        if (!strstr(path, ".loadoutSelect.") || !strstr(path, ".loadoutImage")) return false;
+        s32 player = strstr(path, "P2module") ? 1 : 0;
+        s32 i = s_Shown[player];
+        if (name && name[0]) return false;
+        void* own = i >= 0 ? CellArt(i) : nullptr;
+        if (!own || !Loaded(Arts[i].texture)) return false;
+        const char* card = strstr(path, ".card");
+        s32 slot = ArtCount + 2 + (player * 4 + (card ? atoi(card + 5) / 3 : 0)) % CardAnswers;
+        char url[192];
+        snprintf(url, sizeof(url), "img://%s", path);
+        AddRef(own);
+        SetAnswer(s_Answers[slot], url, own);
+        return true;
+    }
+}
+
 // Cells: shows the cell (cellImage's grandparent), then fits the borrowed art or lets the SD card art answer.
 HOOK_DEFINE_TRAMPOLINE(SetTexture) {
     static void Callback(void* element, const char* name) {
         const char* path = element ? PathOf(element) : "";
+        if (VariationCard(element, path, name)) {
+            s32 i = s_Shown[strstr(path, "P2module") ? 1 : 0];
+            Orig(element, Arts[i].texture);
+            // the card hides its image (cardImageVis) when the loadout has none
+            GValue on;
+            on.type = 2;
+            on.v.b = true;
+            GValue vis;
+            if (const GValue* image = DirectValue(element)) {
+                SetMember(*image, "visible", on);
+                if (Member(*image, "parent", &vis) && vis.IsDisplay()) SetMember(vis, "visible", on);
+            }
+            return;
+        }
         const char* p = strstr(path, "playerSelectGrid.cells.Cell_");
         const char* rest = p ? strchr(p + 28, '.') : nullptr;
         if (!rest || strcmp(rest, ".Cell.cellImage") != 0) return Orig(element, name);
@@ -265,7 +302,7 @@ HOOK_DEFINE_TRAMPOLINE(SetTexture) {
 
         void* own = CellArt(i);
         if (own) {
-            char url[112];
+            char url[192];
             snprintf(url, sizeof(url), "img://%s", path);
             AddRef(own);
             SetAnswer(s_Answers[i], url, own);
@@ -304,11 +341,33 @@ namespace {
     s32 SlotOf(void* element) { return strstr(PathOf(element), "p2MeshImage") ? 1 : 0; }
 }
 
+// The fighter whose variations are opening: CharacterLoadoutKey +0x20 is the character key (a name index; the name
+// table entry's text starts at +0x10, as in UILoadoutSelectModule::GetDiskPresetLoadoutImage).
+HOOK_DEFINE_TRAMPOLINE(LoadoutSelectStart) {
+    static void Callback(void* screen, s32 cursor, void* pad, const void* keys, s32 index, bool flag) {
+        const u8* data = keys ? *static_cast<const u8* const*>(keys) : nullptr;
+        s32 num = keys ? *reinterpret_cast<const s32*>(static_cast<const u8*>(keys) + 8) : 0;
+        const char* name = "";
+        if (data && num > 0) {
+            u32 key = *reinterpret_cast<const u32*>(data + 0x20);
+            auto table = **reinterpret_cast<const u8** const* const*>(exl::util::modules::GetTargetStart() + off::Got_FNameTable);
+            if (table && table[key]) name = reinterpret_cast<const char*>(table[key] + 0x10);
+        }
+        constexpr const char* Keys[ArtCount] = { "CYR", "SEK", "KRO" };  // character keys, in Arts order
+        s32 shown = -1;
+        for (s32 i = 0; i < ArtCount; i++)
+            if (strcasecmp(name, Keys[i]) == 0) shown = i;
+        s_Shown[cursor == 1 ? 1 : 0] = shown;
+        LogVerbose("selectart: variations of %s (player %d)", name, cursor + 1);
+        Orig(screen, cursor, pad, keys, index, flag);
+    }
+};
+
 namespace mk11::selectart {
     void ClearVersusArt(void* element) {
         s32 slot = SlotOf(element);
         Answer& a = s_Answers[ArtCount + slot];
-        char url[112];
+        char url[192];
         snprintf(url, sizeof(url), "img://%s", PathOf(element));
         if (a.image && strcmp(a.url, url) == 0) SetAnswer(a, "", nullptr);
     }
@@ -317,8 +376,9 @@ namespace mk11::selectart {
         const char* base = strstr(name, "ui_ps_Versus_Jpegs.");
         const char* side = base ? strstr(base + 19, "_P") : nullptr;
         const Art* art = side ? ArtNamed(base + 19, side - (base + 19)) : nullptr;
-        if (!art) return nullptr;
         s32 slot = SlotOf(element);
+        if (base) s_Shown[slot] = art ? (s32)(art - Arts) : -1;
+        if (!art) return nullptr;
 
         // Art from the SD card: a stand-in decodes as usual and its image request gets the file's image.
         static void* s_Images[2];
@@ -329,7 +389,7 @@ namespace mk11::selectart {
             s_ImageNames[slot] = art->name;
         }
         if (void* img = s_Images[slot]) {
-            char url[112];
+            char url[192];
             snprintf(url, sizeof(url), "img://%s", PathOf(element));
             AddRef(img);
             SetAnswer(s_Answers[ArtCount + slot], url, img);
@@ -344,5 +404,6 @@ namespace mk11::selectart {
     void Install() {
         SetTexture::InstallAtOffset(off::UIImageElement_setTexture);
         LoadProtocolImage::InstallAtOffset(off::FGFxImageLoader_LoadProtocolImage);
+        LoadoutSelectStart::InstallAtOffset(off::UIPlayerSelectModuleScreen_LoadoutSelectStart);
     }
 }

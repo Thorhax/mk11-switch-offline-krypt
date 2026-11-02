@@ -253,4 +253,6 @@ namespace mk11::off {
     constexpr ptrdiff_t GenericCommand_SetCommandFlags = 0x2491b4c; // GenericCommand::SetCommandFlags(PAD_SCAN_FLAGS, unsigned int, unsigned int, unsigned int, unsigned int)
     constexpr ptrdiff_t FGCharacterObj_RegisterFatalityCommand = 0x243c518; // FGCharacterObj::RegisterFatalityCommand(GenericCommand*, MKS::ScriptObj*, unsigned int, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM, unsigned int (*)(MK11CharacterObj const*, MK11CharacterObj const*))
     constexpr ptrdiff_t GenericCommand_AutoCheckAsFatalityCommand = 0x249269c; // GenericCommand::AutoCheckAsFatalityCommand(float, float, PAD_SCAN_FLAGS, unsigned int)
+    constexpr ptrdiff_t UIPlayerSelectModuleScreen_LoadoutSelectStart = 0x25ae714; // UIPlayerSelectModuleScreen::LoadoutSelectStart(UIGridSelectWidget::CursorNumber, GAMEPAD*, TArray<CharacterLoadoutKey, 8u, NRS::DefaultContainerAllocator> const&, int, bool)
+    constexpr ptrdiff_t Got_FNameTable = 0xab7c730;
 }

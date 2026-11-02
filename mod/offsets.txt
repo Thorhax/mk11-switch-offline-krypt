@@ -293,3 +293,6 @@ GenericCommand_AutoCheckAsGroundSpecialCommand = GenericCommand::AutoCheckAsGrou
 GenericCommand_SetCommandFlags = GenericCommand::SetCommandFlags(PAD_SCAN_FLAGS, unsigned int, unsigned int, unsigned int, unsigned int)
 FGCharacterObj_RegisterFatalityCommand = FGCharacterObj::RegisterFatalityCommand(GenericCommand*, MKS::ScriptObj*, unsigned int, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM, unsigned int (*)(MK11CharacterObj const*, MK11CharacterObj const*))
 GenericCommand_AutoCheckAsFatalityCommand = GenericCommand::AutoCheckAsFatalityCommand(float, float, PAD_SCAN_FLAGS, unsigned int)
+# Variation cards (selectart.cpp): the fighter whose loadouts are shown
+UIPlayerSelectModuleScreen_LoadoutSelectStart = UIPlayerSelectModuleScreen::LoadoutSelectStart(UIGridSelectWidget::CursorNumber, GAMEPAD*, TArray<CharacterLoadoutKey, 8u, NRS::DefaultContainerAllocator> const&, int, bool)
+Got_FNameTable = 0xab7c730

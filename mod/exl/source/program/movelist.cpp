@@ -35,7 +35,11 @@ namespace {
     };
 
     constexpr Move Basic[] = { { L"See Controls in the pause menu", L"" } };
-    constexpr Move Finishers[] = { { L"Fatalities and Brutalities", L"Not available" } };
+    // Cyrax and Sektor: the universal uppercut Brutality (their Fatalities are not in the game).
+    constexpr Move Finishers[] = {
+        { L"Uppercut Brutality", L"End the match with Down + X" },
+        { L"Fatalities", L"Not available" },
+    };
 
     constexpr Move CyraxKombos[] = {
         { L"Easy String", L"X, X, X" },

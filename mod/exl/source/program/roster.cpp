@@ -248,10 +248,26 @@ namespace {
     }
 }
 
+// Cyrax and Sektor may finish a regular fighter with a Brutality (the universal uppercut one; their scripts carry the
+// common Brutality checks). A Brutality on any of the three closes the game (no victim data), and Kronika has none.
+bool CyberBrutality(const void* attacker, const void* victim) {
+    auto name = [](const void* fighter) {
+        const void* def = fighter ? game::Fn<const void* (*)(const void*)>(off::FGCharacterObj_GetCurrentCharacterDefinition)(fighter) : nullptr;
+        return def ? static_cast<const game::NRSString*>(def)->c_str() : "";
+    };
+    const char* a = name(attacker);
+    const char* v = name(victim);
+    return !IsExtra(v) && (strcasecmp(a, "CHAR_Cyrax") == 0 || strcasecmp(a, "CHAR_Sektor") == 0);
+}
+
 HOOK_DEFINE_TRAMPOLINE(BrutalityAllowed) {
     static bool Callback(const void* attacker, const void* victim) {
         if (!Orig(attacker, victim)) return false;
         if (!ExtraInFight()) return true;
+        if (CyberBrutality(attacker, victim)) {
+            LogVerbose("roster: Brutality allowed (Cyrax or Sektor on a regular fighter)");
+            return true;
+        }
         LogBlocked("Brutality");
         return false;
     }
