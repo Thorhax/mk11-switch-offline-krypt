@@ -327,8 +327,10 @@ Item notes:
   forever. `FTableOfContents::AddEntry` / `AddToTOC` after boot puts the file in the table (`ExistsInTOC` 1) and the
   movie still does not start, so `FTableOfContents::ParseFromBuffer` is hooked instead and the main TOC text gets
   `<size> 21 ..\Movies\<KEY>_Ending.mp4 55` for each ending found (chunk and flags as the game's endings).
-- Tested 2026-11-02: Klassic Tower Novice with Cyrax and with Sektor (AI fighter, Very Easy): Ladder_Ending, then
-  the user's CYR_Ending / SEK_Ending, credits skipped, results. Kollection > Endings lists only the base roster (its view uses
+- Tested 2026-11-02: Klassic Tower Novice with Cyrax, Sektor and Kronika (AI fighter, Very Easy): Ladder_Ending,
+  then the user's CYR_Ending / SEK_Ending / KRO_Ending (Kronika's is a preliminary cut), credits skipped, results.
+- Replacing a video: convert it again with make_ending.py, overwrite the mp4 on the SD card and restart the game
+  (the TOC entry, with the file's size, is written at boot). Kollection > Endings lists only the base roster (its view uses
   `PlayMovieFromMainMenu` with names from its own list).
 - Subtitles: the game draws prerendered subtitles by movie name (`mk_execute_prerendered_subtitles`); there are
   none for CYR_Ending, so the video carries its own.
