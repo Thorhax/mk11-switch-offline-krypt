@@ -192,6 +192,8 @@ namespace mk11::off {
     constexpr ptrdiff_t FGCharacterObj_GetCurrentCharacterDefinition = 0x2422cb0; // FGCharacterObj::GetCurrentCharacterDefinition() const
     constexpr ptrdiff_t IsBrutalityAllowed = 0x2467e64; // IsBrutalityAllowed(FGCharacterObj const*, FGCharacterObj const*)
     constexpr ptrdiff_t IsFatalityAvailable = 0x2467c80; // IsFatalityAvailable()
+    constexpr ptrdiff_t FGGameInfo_GetRoundWinner = 0x2034254; // FGGameInfo::GetRoundWinner()
+    constexpr ptrdiff_t TEAM_INFO_GetActiveOpponentInfo = 0x251f2ec; // TEAM_INFO::GetActiveOpponentInfo(unsigned int)
     constexpr ptrdiff_t IsBackgroundFatalityAvailable = 0x1fd4824; // IsBackgroundFatalityAvailable(MK11CharacterObj*)
     constexpr ptrdiff_t FGAIGameInterface_CheckForDrones = 0x23b67ec; // FGAIGameInterface::CheckForDrones()
     constexpr ptrdiff_t UIFightHUD_BuildOnEndOfMatchFade = 0x1fdcd00; // UIFightHUD::BuildOnEndOfMatchFade()
@@ -244,4 +246,11 @@ namespace mk11::off {
     constexpr ptrdiff_t MK11KollectionInfo_KollectionInfoInit = 0x1e6836c; // MK11KollectionInfo::KollectionInfoInit()
     constexpr ptrdiff_t MK11KollectionInfo_RegisterItem = 0x1e684cc; // MK11KollectionInfo::RegisterItem(FKollectionItemInfo*)
     constexpr ptrdiff_t KollectionItem_GetLocalizedName = 0x1e680ec; // KollectionItem::GetLocalizedName() const
+    constexpr ptrdiff_t FGCharacterObj_RegisterSpecialMoveCombo = 0x24256e4; // FGCharacterObj::RegisterSpecialMoveCombo(GenericCommand*, SPECIAL_MOVE_COMBO_INDEX)
+    constexpr ptrdiff_t FGCharacterObj_RegisterEXSpecialMoveCombo = 0x2425788; // FGCharacterObj::RegisterEXSpecialMoveCombo(GenericCommand*, SPECIAL_MOVE_COMBO_INDEX, unsigned int)
+    constexpr ptrdiff_t FGCharacterObj_RegisterSpecialMoveComboN = 0x2425a34; // FGCharacterObj::RegisterSpecialMoveComboN(GenericCommand*, TArray<SPECIAL_MOVE_COMBO_INDEX, 8u, NRS::DefaultContainerAllocator>&)
+    constexpr ptrdiff_t GenericCommand_AutoCheckAsGroundSpecialCommand = 0x2491bc8; // GenericCommand::AutoCheckAsGroundSpecialCommand(PAD_SCAN_FLAGS, unsigned int, unsigned int, unsigned int, unsigned int, float, unsigned int, unsigned int)
+    constexpr ptrdiff_t GenericCommand_SetCommandFlags = 0x2491b4c; // GenericCommand::SetCommandFlags(PAD_SCAN_FLAGS, unsigned int, unsigned int, unsigned int, unsigned int)
+    constexpr ptrdiff_t FGCharacterObj_RegisterFatalityCommand = 0x243c518; // FGCharacterObj::RegisterFatalityCommand(GenericCommand*, MKS::ScriptObj*, unsigned int, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM, unsigned int (*)(MK11CharacterObj const*, MK11CharacterObj const*))
+    constexpr ptrdiff_t GenericCommand_AutoCheckAsFatalityCommand = 0x249269c; // GenericCommand::AutoCheckAsFatalityCommand(float, float, PAD_SCAN_FLAGS, unsigned int)
 }

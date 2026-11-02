@@ -65,6 +65,8 @@ namespace {
         { L"Basic String", L"Y, Y, Y" },
         { L"Basic String", L"X, X, X" },
         { L"Basic String", L"B, B, B" },
+        { L"Basic String", L"B, X" },
+        { L"Back Kick", L"Back + A" },
     };
     constexpr Move KronikaSpecials[] = {
         { L"Teleport", L"Down, Back + Y" },
@@ -78,12 +80,18 @@ namespace {
         { L"Low Attack", L"Down, Forward + A" },
     };
 
+    // Her own Fatality (KRONIKA_FATALITY_A); the range is strict, a little beyond mid-range (user-tested).
+    constexpr Move KronikaFinishers[] = {
+        { L"Fatality", L"Down, Down, Y (just beyond mid-range)" },
+        { L"Brutalities", L"Not available" },
+    };
+
     template<size_t N> constexpr Page P(const Move (&m)[N]) { return { m, (int)N }; }
 
     constexpr Fighter Fighters[] = {
         { "CYRAX",   { P(Basic), P(CyraxKombos),   P(CyraxSpecials),   P(Finishers) } },
         { "SEKTOR",  { P(Basic), P(SektorKombos),  P(SektorSpecials),  P(Finishers) } },
-        { "KRONIKA", { P(Basic), P(KronikaKombos), P(KronikaSpecials), P(Finishers) } },
+        { "KRONIKA", { P(Basic), P(KronikaKombos), P(KronikaSpecials), P(KronikaFinishers) } },
     };
 
     const Fighter* s_Fighter = nullptr;  // the move list being shown is one of them

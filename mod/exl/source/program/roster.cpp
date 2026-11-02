@@ -211,14 +211,33 @@ HOOK_DEFINE_TRAMPOLINE(CharacterLocked) {
 namespace {
     constexpr ptrdiff_t GameInfoRef = 0xab81c18;  // -> FGGameInfo*
 
+    void* GameInfo() { return **reinterpret_cast<void** const*>(exl::util::modules::GetTargetStart() + GameInfoRef); }
+
+    const char* CharacterOf(void* info) {
+        void* fighter = info ? game::Fn<void* (*)(void*, u32)>(off::PLAYER_INFO_GetActiveFGCharacterObj)(info, 1) : nullptr;
+        const void* def = fighter ? game::Fn<const void* (*)(void*)>(off::FGCharacterObj_GetCurrentCharacterDefinition)(fighter) : nullptr;
+        return def ? static_cast<const game::NRSString*>(def)->c_str() : "";
+    }
+
     bool ExtraInFight() {
-        void* gameInfo = **reinterpret_cast<void** const*>(exl::util::modules::GetTargetStart() + GameInfoRef);
+        void* gameInfo = GameInfo();
         if (!gameInfo) return false;
+        for (s32 player = 0; player < 2; player++)
+            if (IsExtra(CharacterOf(game::Fn<void* (*)(void*, s32)>(off::FGGameInfo_GetPlayerInfo)(gameInfo, player)))) return true;
+        return false;
+    }
+
+    // Kronika has the game's own Fatality (pKronikaFatality_A); it is allowed when she won the round against a
+    // regular fighter (finishers on the extra fighters lack victim data). The round winner is a TEAM_INFO; its
+    // active opponent is the victim.
+    bool KronikaFatality() {
+        void* gameInfo = GameInfo();
+        void* winner = gameInfo ? game::Fn<void* (*)(void*)>(off::FGGameInfo_GetRoundWinner)(gameInfo) : nullptr;
+        void* victim = winner ? game::Fn<void* (*)(void*, u32)>(off::TEAM_INFO_GetActiveOpponentInfo)(winner, 0) : nullptr;
+        if (!victim || IsExtra(CharacterOf(victim))) return false;
         for (s32 player = 0; player < 2; player++) {
             void* info = game::Fn<void* (*)(void*, s32)>(off::FGGameInfo_GetPlayerInfo)(gameInfo, player);
-            void* fighter = info ? game::Fn<void* (*)(void*, u32)>(off::PLAYER_INFO_GetActiveFGCharacterObj)(info, 1) : nullptr;
-            const void* def = fighter ? game::Fn<const void* (*)(void*)>(off::FGCharacterObj_GetCurrentCharacterDefinition)(fighter) : nullptr;
-            if (def && IsExtra(static_cast<const game::NRSString*>(def)->c_str())) return true;
+            if (info && info != victim) return strcasecmp(CharacterOf(info), "CHAR_Kronika") == 0;
         }
         return false;
     }
@@ -242,6 +261,10 @@ HOOK_DEFINE_TRAMPOLINE(FatalityAvailable) {
     static bool Callback() {
         if (!Orig()) return false;
         if (!ExtraInFight()) return true;
+        if (KronikaFatality()) {
+            LogVerbose("roster: Kronika's Fatality allowed");
+            return true;
+        }
         LogBlocked("Fatality");
         return false;
     }

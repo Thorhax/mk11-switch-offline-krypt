@@ -15,6 +15,7 @@
 #include "roster.hpp"
 #include "autoplay.hpp"
 #include "movelist.hpp"
+#include "movescan.hpp"
 #include "selectart.hpp"
 #include "endings.hpp"
 #include "daily.hpp"
@@ -562,6 +563,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     roster::Install();
     autoplay::Install();
     movelist::Install();
+    movescan::Install();
     selectart::Install();
     endings::Install();
     daily::Install();
