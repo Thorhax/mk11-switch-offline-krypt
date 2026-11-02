@@ -228,4 +228,9 @@ namespace mk11::off {
     constexpr ptrdiff_t CharacterDefinition_SetIsUserOwnedAI = 0x204bb64; // CharacterDefinition::SetIsUserOwnedAI(bool)
     constexpr ptrdiff_t MKS_MoveListScreen_FillMoveCells = 0x5b7ad30; // MKS_MoveListScreen::MoveList_FillMoveCells(MKS::VM*)
     constexpr ptrdiff_t UIMoveListScreen_SetLocalizedFrameData = 0x201fc2c; // UIMoveListScreen::SetLocalizedFrameData(int, char const*, unsigned int)
+    constexpr ptrdiff_t GFxValue_GetMember = 0x158ed50; // Scaleform::GFx::Value::ObjectInterface::GetMember(void*, char const*, Scaleform::GFx::Value*, bool) const
+    constexpr ptrdiff_t GFxValue_Dtor = 0x1345608; // Scaleform::GFx::Value::~Value()
+    constexpr ptrdiff_t UIImageElement_setTexture = 0x17ba498; // UIImageElement::setTexture(char const*)
+    constexpr ptrdiff_t GFxValue_SetMember = 0x158f210; // Scaleform::GFx::Value::ObjectInterface::SetMember(void*, char const*, Scaleform::GFx::Value const&, bool)
+    constexpr ptrdiff_t UObject_AddToRoot = 0x10f3848; // UObject::AddToRoot()
 }

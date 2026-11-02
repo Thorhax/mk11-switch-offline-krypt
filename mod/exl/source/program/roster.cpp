@@ -31,9 +31,9 @@ namespace {
     };
     static_assert(sizeof(Row) == 0x30);
 
-    // The free grid cells they go in have no cell in the select screen's movie, and the game has no select
-    // screen art for them (ui_ps_CharacterImages / ui_ps_Versus_Jpegs): the cursor reaches them and the name
-    // line shows them, but the cell itself stays empty.
+    // The free grid cells they go in are hidden in the select screen's movie, and the game has no select
+    // screen art for them (ui_ps_CharacterImages / ui_ps_Versus_Jpegs); selectart.cpp shows the cells with
+    // borrowed art.
     struct Extra {
         s32 row, col;
         const char* name;

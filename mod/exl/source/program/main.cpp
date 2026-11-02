@@ -15,6 +15,7 @@
 #include "roster.hpp"
 #include "autoplay.hpp"
 #include "movelist.hpp"
+#include "selectart.hpp"
 #include "daily.hpp"
 #include "system_dialogs.hpp"
 #include <cstdio>
@@ -557,6 +558,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     roster::Install();
     autoplay::Install();
     movelist::Install();
+    selectart::Install();
     daily::Install();
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);

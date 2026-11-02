@@ -19,7 +19,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Forge | Works (user-tested): materials spent, result added |
 | Giving any item (give.txt) | Works: Squared Up (`AUG_MIL_SquareWave`) added, survives a game restart. All 12 Mileena augments at Lvl. 4 owned and confirmed equippable in Kustomize. `<slug> <amount>` lines add currencies and stackable items (v0.10, tested: Souls +1000) |
 | Time Krystals | On-console wallet (`wallet/Exp_PremiumCurrency`): earned from player level-ups (as in the normal game) and Krypt chests (`krypt_chest_krystals`, default 10 per chest), spent in the Store |
-| Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01), invisible cells (no art in the game). Full Klassic Tower with Cyrax completed; finishers disabled in their fights. Move lists in the pause menu and Quick Reference, cursor reaches every row (v0.10, tested with Cyrax) |
+| Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01). Their select screen cells show borrowed art (assist icons, Kronika's announcer portrait; 2026-11-02). Full Klassic Tower with Cyrax completed; finishers disabled in their fights. Move lists in the pause menu and Quick Reference, cursor reaches every row (v0.10, tested with Cyrax) |
 | Kombat Kard (ZL) | Opens offline (2026-11-01): wallet, Kareer Stats, notifications. Daily Challenges: three a day, progress kept, Koins paid at the goal (tested: throws, uppercuts) |
 | Krypt Shrine and Kollector | Work offline (user-tested 2026-11-01): Kollector trades spend relics, gear and skin pop-ups shown (`AddUnlockMessageFromOnlinePayload` call sites pass true) |
 | Free spending (`free_currency`, `free_items`) | Optional, off by default (v0.9): `wallet::Set` ignores decreases of the four currencies / of non-`Exp_` spendables. Tested in the Store; untested for chests, the Forge and Kollector trades |
@@ -241,18 +241,23 @@ Item notes:
   variation, and full matches run with them as P1 or CPU (Cyrax vs Sub-Zero, Kronika vs Sektor; Cyrax wins,
   victory screen, rewards). Without character data they earn no character XP. Klassic Towers' grid reaches them
   too (a tower run with them, and its ending, is untested).
-- **Not shown:** the select screen's Flash movie has no cell at the free grid positions (GetCellElement returns
-  null) and the game has no art for them (no `cell_<Name>` in ui_ps_CharacterImages, no `<Name>_P1` in
-  ui_ps_Versus_Jpegs), so their cells look empty and the large art keeps the previous fighter.
-  Where: Cyrax top-left (up from Joker), Sektor top-right (up from Spawn), Kronika bottom-right (right of Rain).
-- Research for visible cells (2026-11-02, not built): the grid widget's cells are an array (+112, count +120)
-  filled by `UIGridSelectWidget::CreateFocusCellSequence(prefix, count, start)` from Flash elements named by
-  cell number (`cell_%d` / `Cell_%d` patterns; the player select override adds `.highlightP1/P2`). New cells would
-  have to be created in the live movie: Scaleform `Value::ObjectInterface::AttachMovie`, `Movie::CreateObject`,
-  `SetDisplayInfo` are linked, but `UIElement` changes (+24 value handle) are queued as deferred Scaleform work
-  (`EnqueueDeferredScaleformWork`), so creation must run on that thread; the cell symbol's AS3 class name is
-  only known at runtime (the UI movies are inside compressed `.xxx` packages). Portrait art for the three does
-  not exist and would have to be borrowed (e.g. Konsumable assist icons for Cyrax/Sektor).
+- **Select screen cells (selectart.cpp, 2026-11-02, tested):** the movie has all 42 cells
+  (`_root.playerSelectPos.playerSelectGrid.cells.Cell_<row * 6 + col>`); the five free ones are hidden
+  (`visible = false`). The script sets each cell's portrait with `UIImageElement::setTexture` on
+  `Cell_<n>.Cell.cellImage` ("#MainlineManaged.UI.ui_ps_CharacterImages.cell_<Name>.tga", then a `LoadAsset("img://<path>")`
+  invoke). The hook swaps the texture for borrowed art and sets `visible = true` on the cell (cellImage's grandparent)
+  and scale/y on cellImage through Scaleform `Value::ObjectInterface::GetMember/SetMember`, directly, only when the
+  element is not queued (+32 clear), as the game does itself in that call. Art: Cyrax `Consumable_CyraxAssist` (net),
+  Sektor `Consumable_SektorAssist` (missiles), Kronika `ui_g_KosmeticIcons.Announcer.AnnouncerVoice_Kronika` (portrait,
+  512x512). The two assist icons are 64x64 (scale 1.6), cellImage starts at about 0.78 (128 x 256 portraits).
+  The borrowed textures belong to other UI and are gone after a fight, so the first time each is found
+  (`StaticFindObject(UTexture2D::PrivateStaticClass, null, full path)`) it is rooted (`UObject::AddToRoot`); until
+  then the cell stays hidden. Tested: Fight > Local (both cursors), back out and in, Fighter Select after a match,
+  Klassic Towers select. The large art beside the grid still keeps the previous fighter (no `<Name>_P1` versus art).
+- Dead ends while getting there: a second trampoline on `UIImageElement::SetTextureDecodeAsync` (already hooked in
+  roster.cpp) looped forever; creating a `UIElement` for `Cell_<n>` from inside an invoke crashed in
+  `AS3::MovieRoot::GetVariable`; reading Flash values from a `gotoAndPlay` ("GainFocus") hook crashed.
+  Texture lookups by full path with roster.cpp's image class fail (that class is the JPEG versus art's).
 - How: PlayerSelect.mko is compiled to native code (`MKS_PlayerSelect::*`). Its roster `charTable` (37 rows of
   0x30: row, col, `CHAR_<Name>`, portrait, key, ...) is reached through `MKS::VM::GetStackAddr(0x2810000000001288)`;
   that call returns a 40-row copy (extra rows copy Scorpion's tail fields), and the 23 row-count constants
