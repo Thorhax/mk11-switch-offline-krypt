@@ -21,7 +21,7 @@ main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 | Time Krystals | On-console wallet (`wallet/Exp_PremiumCurrency`): earned from player level-ups (as in the normal game) and Krypt chests (`krypt_chest_krystals`, default 10 per chest), spent in the Store |
 | Cyrax, Sektor, Kronika | Selectable in local versus (2026-11-01). Their select screen cells show borrowed art, or the user's art from `sdmc:/mk11offline/art/` (cell and versus art, v0.11). Full Klassic Towers with all three completed; their own tower endings play from `romfs/Movies/` when present (v0.11) and are listed in Kollection > Endings; finishers disabled in their fights. Move lists in the pause menu and Quick Reference, cursor reaches every row (v0.10, tested with Cyrax) |
 | Kombat Kard (ZL) | Opens offline (2026-11-01): wallet, Kareer Stats, notifications. Daily Challenges: three a day, progress kept, Koins paid at the goal (tested: throws, uppercuts) |
-| Krypt Shrine and Kollector | Work offline (user-tested 2026-11-01): Kollector trades spend relics, gear and skin pop-ups shown (`AddUnlockMessageFromOnlinePayload` call sites pass true) |
+| Krypt Shrine and Kollector | Work offline (user-tested 2026-11-01/02): Kollector trades spend relics; Shrine Koin offerings give Konsumables (up to 74,000) and gear or skins (75,000 and up), granted and kept after equip and save. Gear and skin pop-ups shown for chests, Kollector and Shrine (the `AddUnlockMessageFromOnlinePayload` call sites in ProcessPendingServerRewardRequest, KryptExecuteStoreTrade and OnReward pass true). Known: Koin offerings also get the chest bonus Time Krystals |
 | Free spending (`free_currency`, `free_items`) | Optional, off by default (v0.9): `wallet::Set` ignores decreases of the four currencies / of non-`Exp_` spendables. Tested in the Store; untested for chests, the Forge and Kollector trades |
 | AI fighter (`p1_cpu`) | Optional, off by default: player 1 uses the game's user-owned AI path; the end-of-match menu answers the controller (v0.10, tested in Fight > Local and in Klassic Towers) |
 | Log (`verbose_log`) | Routine lines off by default (v0.10) |
@@ -158,8 +158,9 @@ Hooks are in `mod/exl/source/program/`. The offsets are generated from symbol na
 - Gear reward pop-ups in the Krypt: `UnlockTracker::AddUnlockMessageFromOnlinePayload(payload, group, bool)`
   shows an `Equipment` unlockTracker entry from the matching server-made instance in `rewards.items`; only when
   the bool is set does it fall back to building the gear from the entry's GUID (Story fights pass true). Our reply's
-  `items` is empty, and `KryptExecuteStoreTrade` (Kollector) and `ProcessPendingServerRewardRequest` (chests,
-  vases) pass false, so gear was granted without a pop-up. Both call sites now pass true (2026-11-01).
+  `items` is empty, and `KryptExecuteStoreTrade` (Kollector), `ProcessPendingServerRewardRequest` (chests,
+  vases) and `MK11Krypt::OnReward` (Shrine) pass false, so gear was granted without a pop-up. All three call
+  sites now pass true (2026-11-01; the Shrine's 2026-11-02, user-tested with 48,000-100,000 offerings).
 - Free spending (config.ini, off by default): `free_currency=1` / `free_items=1` make `wallet::Set` ignore
   decreases of Koins, Souls, Hearts and Time Krystals / of spendable items (materials, relics, keys,
   Konsumables). Every offline spend goes through the wallet, so this covers the Krypt, Shrine, Kollector,
