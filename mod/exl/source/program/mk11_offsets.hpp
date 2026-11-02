@@ -233,4 +233,8 @@ namespace mk11::off {
     constexpr ptrdiff_t UIImageElement_setTexture = 0x17ba498; // UIImageElement::setTexture(char const*)
     constexpr ptrdiff_t GFxValue_SetMember = 0x158f210; // Scaleform::GFx::Value::ObjectInterface::SetMember(void*, char const*, Scaleform::GFx::Value const&, bool)
     constexpr ptrdiff_t UObject_AddToRoot = 0x10f3848; // UObject::AddToRoot()
+    constexpr ptrdiff_t FGFxImageLoader_LoadProtocolImage = 0x174837c; // FGFxMovie::FGFxImageLoader::LoadProtocolImage(Scaleform::GFx::ImageCreateInfo const&, Scaleform::String const&)
+    constexpr ptrdiff_t RawImage_Create = 0x140b660; // Scaleform::Render::RawImage::Create(Scaleform::Render::ImageFormat, unsigned int, Scaleform::Render::Size<unsigned int> const&, unsigned int, Scaleform::MemoryHeap*, Scaleform::Render::ImageUpdateSync*)
+    constexpr ptrdiff_t ScaleformRefCount_AddRef = 0x139fd70; // Scaleform::RefCountImpl::AddRef()
+    constexpr ptrdiff_t ScaleformRefCount_Release = 0x139fd90; // Scaleform::RefCountImpl::Release()
 }

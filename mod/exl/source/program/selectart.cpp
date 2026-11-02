@@ -2,17 +2,31 @@
 #include "game.hpp"
 #include "log.hpp"
 #include "selectart.hpp"
+#include "nn/fs.hpp"
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-// Select screen cells for Cyrax, Sektor and Kronika.
+namespace nn::fs {
+    void SetEnabledAutoAbort(bool enabled);
+}
+
+// Select screen art for Cyrax, Sektor and Kronika.
 //
-// The player select movie has all 42 grid cells (playerSelectGrid.cells.Cell_<row * 6 + col>); the five the
-// base roster leaves free are hidden (visible = false). The script still sets a texture on the extra
+// Cells: the player select movie has all 42 grid cells (playerSelectGrid.cells.Cell_<row * 6 + col>); the five
+// the base roster leaves free are hidden (visible = false). The script still sets a texture on the extra
 // fighters' cells (UIImageElement::setTexture "#MainlineManaged.UI.ui_ps_CharacterImages.cell_<Name>.tga"),
 // but the game has no portraits for them. That call shows the cell again and swaps in art that is loaded on
-// this screen anyway: Cyrax's and Sektor's assist Konsumable icons and Kronika's announcer voice icon,
-// scaled and moved to sit inside the frame.
+// this screen anyway: Cyrax's and Sektor's assist Konsumable icons and Kronika's announcer voice icon, scaled
+// and moved to sit inside the frame.
+//
+// Versus art (the large portrait beside the grid, p1MeshImage / p2MeshImage) comes from the SD card; without it
+// the previous fighter's stays.
+//
+// Art on the SD card: sdmc:/mk11offline/art/<Name>_cell.art (128 x 256, replaces the borrowed cell art) and
+// <Name>_large.art (1024 x 1088 for player 1; mirrored with 256 padding columns for player 2, whose image is
+// placed further right and reaches the screen edge), made with tools/make_art.py. Each image request ("img://<element>",
+// FGFxImageLoader::LoadProtocolImage) for those elements is answered with a Scaleform RawImage of the file.
 
 using namespace mk11;
 
@@ -65,95 +79,265 @@ namespace {
         return SetMember(obj, name, n);
     }
 
-    struct Art {
-        s32 cell;             // grid cell number (row * 6 + col), as in roster.cpp
-        const char* texture;  // borrowed texture, in the game's setTexture form
-        double scale, dy;     // fitted to the cell frame on the console
-    };
-    constexpr Art Arts[] = {
-        { 0, "#MainlineManaged.UI.UI_G_CONSUMABLEICONS.Consumable_CyraxAssist.tga", 1.6, 15 },
-        { 5, "#MainlineManaged.UI.UI_G_CONSUMABLEICONS.Consumable_SektorAssist.tga", 1.6, 15 },
-        { 41, "#MainlineManaged.UI.ui_g_KosmeticIcons.Announcer.AnnouncerVoice_Kronika.tga", 0.33, 8 },
-    };
-
-    constexpr ptrdiff_t Texture2DClass = 0xabdd0d8;  // UTexture2D::PrivateStaticClass
-
-    // The borrowed textures are loaded with other screens' UI (the main menu has them, the select screen
-    // after a fight does not). The first time one is found it is rooted, so it stays loaded for the session;
-    // until then the cell stays hidden.
-    bool Loaded(const Art& art) {
-        static bool s_Rooted[sizeof(Arts) / sizeof(Arts[0])];
-        size_t i = &art - Arts;
-        if (s_Rooted[i]) return true;
-        char path[128], name[96];  // full path for the lookup, short name for the log
-        const char* end = art.texture + strlen(art.texture) - 4;  // ".tga"
-        const char* start = end;
-        while (start > art.texture && start[-1] != '.') start--;
-        snprintf(path, sizeof(path), "%.*s", (int)(end - art.texture - 1), art.texture + 1);
-        snprintf(name, sizeof(name), "%.*s", (int)(end - start), start);
-        const void* texture2D = *reinterpret_cast<void* const*>(exl::util::modules::GetTargetStart() + Texture2DClass);
-        void* tex = game::Fn<void* (*)(const void*, void*, const char*, int)>(off::UObject_StaticFindObject)(texture2D, nullptr, path, 0);
-        if (!tex) return false;
-        game::Fn<void (*)(void*)>(off::UObject_AddToRoot)(tex);
-        s_Rooted[i] = true;
-        Log("selectart: %s kept loaded for Cell_%d", name, art.cell);
-        return true;
-    }
-
     const char* PathOf(void* element) {
         const char* name = *reinterpret_cast<const char* const*>(static_cast<u8*>(element) + 8);
         s32 len = *reinterpret_cast<const s32*>(static_cast<u8*>(element) + 16);
         return name && len ? name : "";
     }
 
-    // The art for a "...playerSelectGrid.cells.Cell_<n>.Cell.cellImage" element, if it is an extra fighter's.
-    const Art* ArtFor(const char* path) {
-        const char* p = strstr(path, "playerSelectGrid.cells.Cell_");
-        if (!p) return nullptr;
-        const char* rest = strchr(p + 28, '.');
-        if (!rest || strcmp(rest, ".Cell.cellImage") != 0) return nullptr;
-        s32 n = atoi(p + 28);
+    // An element's Flash value when the game itself would change it directly (+32 clear: not queued).
+    const GValue* DirectValue(void* element) {
+        const GValue* value = *reinterpret_cast<GValue* const*>(static_cast<u8*>(element) + 24);
+        u32 queued = *reinterpret_cast<const u32*>(static_cast<u8*>(element) + 32);
+        return queued ? nullptr : value;
+    }
+
+    struct Art {
+        const char* name;     // as in the game's asset names
+        s32 cell;             // grid cell number (row * 6 + col), as in roster.cpp
+        const char* texture;  // borrowed cell texture, in the game's setTexture form
+        double scale, dy;     // fitted to the cell frame on the console
+    };
+    constexpr Art Arts[] = {
+        { "Cyrax", 0, "#MainlineManaged.UI.UI_G_CONSUMABLEICONS.Consumable_CyraxAssist.tga", 1.6, 15 },
+        { "Sektor", 5, "#MainlineManaged.UI.UI_G_CONSUMABLEICONS.Consumable_SektorAssist.tga", 1.6, 15 },
+        { "Kronika", 41, "#MainlineManaged.UI.ui_g_KosmeticIcons.Announcer.AnnouncerVoice_Kronika.tga", 0.33, 8 },
+    };
+    constexpr s32 ArtCount = sizeof(Arts) / sizeof(Arts[0]);
+
+    const Art* ArtNamed(const char* name, size_t len) {
         for (const Art& a : Arts)
-            if (a.cell == n) return &a;
+            if (strlen(a.name) == len && strncmp(a.name, name, len) == 0) return &a;
         return nullptr;
     }
 
-    // Shows the cell (cellImage's grandparent) and fits the art, directly, as the game itself does for
-    // elements that are not queued (+32 clear). A second texture on the same image leaves it as it is.
-    void Place(void* element, const Art& art) {
-        const GValue* image = *reinterpret_cast<GValue* const*>(static_cast<u8*>(element) + 24);
-        u32 queued = *reinterpret_cast<const u32*>(static_cast<u8*>(element) + 32);
-        if (!image || queued) {
-            Log("selectart: Cell_%d left hidden (value %p, queued %u)", art.cell, image, queued);
-            return;
+    constexpr ptrdiff_t Texture2DClass = 0xabdd0d8;  // UTexture2D::PrivateStaticClass
+
+    // The borrowed textures are loaded with other screens' UI (the main menu has them, the select screen
+    // after a fight does not). The first time one is found it is rooted, so it stays loaded for the session;
+    // until then the cell stays hidden.
+    bool Loaded(const char* texture) {
+        static const char* s_Rooted[ArtCount];
+        for (const char* r : s_Rooted)
+            if (r == texture) return true;
+        char path[128];
+        snprintf(path, sizeof(path), "%.*s", (int)strlen(texture) - 5, texture + 1);  // without '#' and ".tga"
+        const void* texture2D = *reinterpret_cast<void* const*>(exl::util::modules::GetTargetStart() + Texture2DClass);
+        void* tex = game::Fn<void* (*)(const void*, void*, const char*, int)>(off::UObject_StaticFindObject)(texture2D, nullptr, path, 0);
+        if (!tex) return false;
+        game::Fn<void (*)(void*)>(off::UObject_AddToRoot)(tex);
+        for (const char*& r : s_Rooted)
+            if (!r) {
+                r = texture;
+                break;
+            }
+        Log("selectart: %s kept loaded", path);
+        return true;
+    }
+}
+
+// Art files on the SD card, as Scaleform images.
+namespace {
+    struct ArtHeader {
+        char magic[8];  // "MK11ART2"
+        u32 width, height;
+        u32 pad;  // columns on the left that only the mirrored (player 2) image uses
+    };
+
+    // A RawImage (R8G8B8A8) of sdmc:/mk11offline/art/<name>_<kind>.art: without its padding, or mirrored with it
+    // (the padding then reaches the right edge of the screen); null if there is none.
+    void* LoadArt(const char* name, const char* kind, bool mirror) {
+        if (!MountSd()) return nullptr;
+        char path[96];
+        snprintf(path, sizeof(path), "mk11sd:/mk11offline/art/%s_%s.art", name, kind);
+        nn::fs::FileHandle h;
+        nn::fs::SetEnabledAutoAbort(false);
+        bool open = R_SUCCEEDED(nn::fs::OpenFile(&h, path, nn::fs::OpenMode_Read));
+        nn::fs::SetEnabledAutoAbort(true);
+        if (!open) return nullptr;
+        void* img = nullptr;
+        ArtHeader head = {};
+        s64 size = 0;
+        nn::fs::GetFileSize(&size, h);
+        nn::fs::ReadFile(h, 0, &head, sizeof(head));
+        if (memcmp(head.magic, "MK11ART2", 8) != 0 || !head.width || !head.height || head.width > 2048 || head.height > 2048 ||
+            head.pad >= head.width || size != (s64)(sizeof(head) + (u64)head.width * head.height * 4)) {
+            Log("selectart: %s is not a valid art file", path);
+        } else {
+            u32 skip = mirror ? 0 : head.pad;
+            u32 width = head.width - skip;
+            u32 dims[2] = { width, head.height };
+            img = game::Fn<void* (*)(u32, u32, const u32*, u32, void*, void*)>(off::RawImage_Create)(1, 1, dims, 0, nullptr, nullptr);
+            u8* planes = img ? *reinterpret_cast<u8**>(static_cast<u8*>(img) + 0x38) : nullptr;  // RawImage ImageData pPlanes
+            u64 pitch = planes ? *reinterpret_cast<u64*>(planes + 8) : 0;
+            u8* data = planes ? *reinterpret_cast<u8**>(planes + 24) : nullptr;
+            if (!data || pitch < width * 4u) {
+                Log("selectart: no image memory for %s", path);
+                img = nullptr;  // a failed RawImage is left to the game's allocator
+            } else {
+                u64 row = head.width * 4u;
+                for (u32 y = 0; y < head.height; y++) {
+                    u8* line = data + y * pitch;
+                    nn::fs::ReadFile(h, sizeof(head) + y * row + skip * 4u, line, width * 4u);
+                    if (mirror)
+                        for (u32 a = 0, b = width - 1; a < b; a++, b--)
+                            for (u32 c = 0; c < 4; c++) {
+                                u8 t = line[a * 4 + c];
+                                line[a * 4 + c] = line[b * 4 + c];
+                                line[b * 4 + c] = t;
+                            }
+                }
+                Log("selectart: %s %ux%u%s", path, width, head.height, mirror ? " (mirrored)" : "");
+            }
         }
+        nn::fs::CloseFile(h);
+        return img;
+    }
+
+    void AddRef(void* img) { game::Fn<void (*)(void*)>(off::ScaleformRefCount_AddRef)(img); }
+    void Release(void* img) { game::Fn<void (*)(void*)>(off::ScaleformRefCount_Release)(img); }
+
+    // Images that answer requests for an element's url. Set on the game thread, read on the Scaleform one.
+    struct Answer {
+        char url[112];
+        void* image;
+    };
+    Answer s_Answers[ArtCount + 2];  // the three cells, then the two versus images
+    volatile u32 s_Lock = 0;
+
+    void Lock() {
+        while (__atomic_exchange_n(&s_Lock, 1, __ATOMIC_ACQUIRE)) {}
+    }
+    void Unlock() { __atomic_store_n(&s_Lock, 0, __ATOMIC_RELEASE); }
+
+    // Takes over one reference to `image`.
+    void SetAnswer(Answer& a, const char* url, void* image) {
+        Lock();
+        void* old = a.image;
+        snprintf(a.url, sizeof(a.url), "%s", url);
+        a.image = image;
+        Unlock();
+        if (old) Release(old);
+    }
+
+    void* Answered(const char* url) {
+        void* img = nullptr;
+        Lock();
+        for (Answer& a : s_Answers)
+            if (a.image && strcmp(a.url, url) == 0) {
+                img = a.image;
+                AddRef(img);
+                break;
+            }
+        Unlock();
+        return img;
+    }
+
+    // Cell art from the SD card, read once per name.
+    void* CellArt(s32 index) {
+        static void* s_Cells[ArtCount];
+        static bool s_Tried[ArtCount];
+        if (!s_Tried[index]) {
+            s_Tried[index] = true;
+            s_Cells[index] = LoadArt(Arts[index].name, "cell", false);
+        }
+        return s_Cells[index];
+    }
+}
+
+// Cells: shows the cell (cellImage's grandparent), then fits the borrowed art or lets the SD card art answer.
+HOOK_DEFINE_TRAMPOLINE(SetTexture) {
+    static void Callback(void* element, const char* name) {
+        const char* path = element ? PathOf(element) : "";
+        const char* p = strstr(path, "playerSelectGrid.cells.Cell_");
+        const char* rest = p ? strchr(p + 28, '.') : nullptr;
+        if (!rest || strcmp(rest, ".Cell.cellImage") != 0) return Orig(element, name);
+        s32 n = atoi(p + 28);
+        s32 i = 0;
+        while (i < ArtCount && Arts[i].cell != n) i++;
+        if (i == ArtCount || !Loaded(Arts[i].texture)) return Orig(element, name);
+        const Art& art = Arts[i];
+
+        void* own = CellArt(i);
+        if (own) {
+            char url[112];
+            snprintf(url, sizeof(url), "img://%s", path);
+            AddRef(own);
+            SetAnswer(s_Answers[i], url, own);
+        }
+        const GValue* image = DirectValue(element);
         GValue inner, cell;
-        if (!Member(*image, "parent", &inner) || !Member(inner, "parent", &cell) || !cell.IsDisplay()) {
-            Log("selectart: Cell_%d not found", art.cell);
-            return;
+        if (!image || !Member(*image, "parent", &inner) || !Member(inner, "parent", &cell) || !cell.IsDisplay()) {
+            Log("selectart: Cell_%d left hidden", art.cell);
+            return Orig(element, name);
         }
         GValue on;
         on.type = 2;
         on.v.b = true;
         SetMember(cell, "visible", on);
         double scale = Number(*image, "scaleX");
-        if (scale > art.scale - 0.001 && scale < art.scale + 0.001) return;
-        double y = Number(*image, "y");
-        SetNumber(*image, "scaleX", art.scale);
-        SetNumber(*image, "scaleY", art.scale);
-        SetNumber(*image, "y", y + art.dy);
-    }
-}
-
-HOOK_DEFINE_TRAMPOLINE(SetTexture) {
-    static void Callback(void* element, const char* name) {
-        const Art* art = element ? ArtFor(PathOf(element)) : nullptr;
-        if (!art || !Loaded(*art)) return Orig(element, name);
-        Place(element, *art);
-        Orig(element, art->texture);
+        if (!own && !(scale > art.scale - 0.001 && scale < art.scale + 0.001)) {
+            double y = Number(*image, "y");
+            SetNumber(*image, "scaleX", art.scale);
+            SetNumber(*image, "scaleY", art.scale);
+            SetNumber(*image, "y", y + art.dy);
+        }
+        Orig(element, art.texture);
     }
 };
 
+HOOK_DEFINE_TRAMPOLINE(LoadProtocolImage) {
+    static void* Callback(void* self, const void* info, const void* url) {
+        const char* u = reinterpret_cast<const char*>((*reinterpret_cast<const uintptr_t*>(url) & ~uintptr_t(3)) + 12);  // String data
+        if (void* img = Answered(u)) return img;
+        return Orig(self, info, url);
+    }
+};
+
+// Versus art.
+namespace {
+    s32 SlotOf(void* element) { return strstr(PathOf(element), "p2MeshImage") ? 1 : 0; }
+}
+
 namespace mk11::selectart {
-    void Install() { SetTexture::InstallAtOffset(off::UIImageElement_setTexture); }
+    void ClearVersusArt(void* element) {
+        s32 slot = SlotOf(element);
+        Answer& a = s_Answers[ArtCount + slot];
+        char url[112];
+        snprintf(url, sizeof(url), "img://%s", PathOf(element));
+        if (a.image && strcmp(a.url, url) == 0) SetAnswer(a, "", nullptr);
+    }
+
+    const char* VersusArt(void* element, const char* name) {
+        const char* base = strstr(name, "ui_ps_Versus_Jpegs.");
+        const char* side = base ? strstr(base + 19, "_P") : nullptr;
+        const Art* art = side ? ArtNamed(base + 19, side - (base + 19)) : nullptr;
+        if (!art) return nullptr;
+        s32 slot = SlotOf(element);
+
+        // Art from the SD card: a stand-in decodes as usual and its image request gets the file's image.
+        static void* s_Images[2];
+        static const char* s_ImageNames[2];
+        if (s_ImageNames[slot] != art->name) {
+            if (s_Images[slot]) Release(s_Images[slot]);
+            s_Images[slot] = LoadArt(art->name, "large", slot == 1);
+            s_ImageNames[slot] = art->name;
+        }
+        if (void* img = s_Images[slot]) {
+            char url[112];
+            snprintf(url, sizeof(url), "img://%s", PathOf(element));
+            AddRef(img);
+            SetAnswer(s_Answers[ArtCount + slot], url, img);
+            static char standIn[2][80];
+            snprintf(standIn[slot], sizeof(standIn[slot]), "MainlineManaged.UI.ui_ps_Versus_Jpegs.Scorpion%s", side);
+            return standIn[slot];
+        }
+
+        return nullptr;
+    }
+
+    void Install() {
+        SetTexture::InstallAtOffset(off::UIImageElement_setTexture);
+        LoadProtocolImage::InstallAtOffset(off::FGFxImageLoader_LoadProtocolImage);
+    }
 }

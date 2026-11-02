@@ -1,4 +1,4 @@
-"""Small FTP helper for the test console: ftp.py put <local> <remote> | get <remote> <local> | rm <remote> | ls <dir> | cat <remote>"""
+"""Small FTP helper for the test console: ftp.py put <local> <remote> | get <remote> <local> | rm <remote> | ls <dir> | cat <remote> | mkdir <dir>"""
 import ftplib, io, json, os, sys
 # Console address and login live in rig.local.json next to this script (not committed):
 # {"host": "...", "ftp_port": 5000, "ftp_user": "...", "ftp_pass": "..."}
@@ -13,6 +13,8 @@ elif op == "rm":
     f.delete(sys.argv[2])
 elif op == "ls":
     for n, fa in f.mlsd(sys.argv[2]): print(fa.get("type"), fa.get("size", ""), n)
+elif op == "mkdir":
+    f.mkd(sys.argv[2])
 elif op == "cat":
     b = io.BytesIO(); f.retrbinary("RETR " + sys.argv[2], b.write); sys.stdout.write(b.getvalue().decode(errors="replace"))
 f.quit()

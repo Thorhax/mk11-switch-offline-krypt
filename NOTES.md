@@ -254,6 +254,17 @@ Item notes:
   (`StaticFindObject(UTexture2D::PrivateStaticClass, null, full path)`) it is rooted (`UObject::AddToRoot`); until
   then the cell stays hidden. Tested: Fight > Local (both cursors), back out and in, Fighter Select after a match,
   Klassic Towers select. The large art beside the grid still keeps the previous fighter (no `<Name>_P1` versus art).
+- **Art from the SD card (2026-11-02, tested):** every Flash image request goes through
+  `FGFxMovie::FGFxImageLoader::LoadProtocolImage(info, "img://<element path>")`; the hook answers it for the extra
+  fighters' elements with a Scaleform `RawImage` (`RawImage::Create(format 1 = R8G8B8A8, ...)`, ImageData at +0x28,
+  plane 0 at [+0x38]: w, h, pitch +8, data +24) filled from `sdmc:/mk11offline/art/<Name>_cell.art` / `_large.art`
+  (tools/make_art.py: "MK11ART2", width, height, left padding, RGBA). A 128x256 cell image fills the frame like the
+  game's portraits. Versus art: roster.cpp no longer just skips the missing `<Name>_P1/_P2.jpg`: a stand-in
+  (Scorpion's) decodes so the element still asks for its image, and the request gets the file's image. The
+  1024-wide image is placed from its left edge: player 1 at x 0 (0.665 px per texel, about 650 px visible beside
+  the grid), player 2 at about x 430, so player 2 needs 256 more columns to reach the screen edge (the file's
+  left padding, mirrored to the right). Kronika has no art file yet; scaling her 512x512 announcer icon on the
+  versus image element (a 2560 x 2160 box) put it off screen, so her versus art stays as it was.
 - Dead ends while getting there: a second trampoline on `UIImageElement::SetTextureDecodeAsync` (already hooked in
   roster.cpp) looped forever; creating a `UIElement` for `Cell_<n>` from inside an invoke crashed in
   `AS3::MovieRoot::GetVariable`; reading Flash values from a `gotoAndPlay` ("GainFocus") hook crashed.

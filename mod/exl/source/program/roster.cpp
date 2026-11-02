@@ -2,6 +2,7 @@
 #include "game.hpp"
 #include "log.hpp"
 #include "roster.hpp"
+#include "selectart.hpp"
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -271,7 +272,12 @@ namespace {
 
 HOOK_DEFINE_TRAMPOLINE(ImageDecode) {
     static void Callback(void* element, const char* name, u32 flags) {
+        selectart::ClearVersusArt(element);
         if (name && *name && !ImageExists(name)) {
+            // The extra fighters' versus art (selectart.cpp): shown already, or a stand-in to decode.
+            const char* standIn = selectart::VersusArt(element, name);
+            if (standIn && !*standIn) return;
+            if (standIn && ImageExists(standIn)) return Orig(element, standIn, flags);
             Log("roster: no image %s, skipped", name);
             return;
         }
