@@ -72,7 +72,7 @@ namespace {
         { L"Basic String", L"B, X" },
         { L"Back Kick", L"Back + A" },
     };
-    // Inputs confirmed by the user in play (2026-11-03); the teleport is from the earlier list, not yet confirmed.
+    // Inputs confirmed by the user in play (2026-11-03), teleport included.
     constexpr Move KronikaSpecials[] = {
         { L"Mid Projectile", L"Back, Forward + Y" },
         { L"Orb Deploy (Stun)", L"Down, Back + X" },
