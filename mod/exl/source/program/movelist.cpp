@@ -72,16 +72,17 @@ namespace {
         { L"Basic String", L"B, X" },
         { L"Back Kick", L"Back + A" },
     };
+    // Inputs confirmed by the user in play (2026-11-03); the teleport is from the earlier list, not yet confirmed.
     constexpr Move KronikaSpecials[] = {
-        { L"Teleport", L"Down, Back + Y" },
         { L"Mid Projectile", L"Back, Forward + Y" },
-        { L"Orbs", L"Down, Back + X" },
-        { L"Tracking Move", L"Back, Forward + X" },
-        { L"Healing/Damaging Dome", L"Down, Forward + X" },
-        { L"Launcher", L"Down, Back + B" },
-        { L"Combo Cancel", L"Down, Forward + B" },
+        { L"Orb Deploy (Stun)", L"Down, Back + X" },
+        { L"Tracking Attack", L"Back, Forward + X" },
+        { L"Damaging/Healing Dome", L"Down, Forward + X" },
         { L"Ground Crystals", L"Back, Forward + B" },
+        { L"Physical Launcher", L"Down, Back + B" },
+        { L"Fast Combo Cancel", L"Down, Forward + B" },
         { L"Low Attack", L"Down, Forward + A" },
+        { L"Teleport", L"Down, Back + Y" },
     };
 
     // Her own Fatality (KRONIKA_FATALITY_A); the range is strict, a little beyond mid-range (user-tested).
