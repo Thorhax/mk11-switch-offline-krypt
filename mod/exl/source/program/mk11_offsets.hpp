@@ -158,6 +158,7 @@ namespace mk11::off {
     constexpr ptrdiff_t FGOnlineInventoryBatch_AddCurrencyRequest = 0x2040b48; // FGOnlineInventoryBatch::AddCurrencyRequest(NRS::NRSBasicString<NRS::DefaultContainerAllocator>, int, NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&, BILootDropSourceData const&)
     constexpr ptrdiff_t SpendableItemManager_GetItemDefinitionBySlug = 0x21c1578; // SpendableItemManager::GetItemDefinitionBySlug(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&)
     constexpr ptrdiff_t StoreOpen_ReconnectCheck = 0x5b0b7d8;
+    constexpr ptrdiff_t StoreOpen_ReconnectCall = 0x5b0b7d4;
     constexpr ptrdiff_t PremiumShop_CheckRestrictionsCall = 0x20d4874;
     constexpr ptrdiff_t PremiumShopPurchase_LinkCheck = 0x20d37c4;
     constexpr ptrdiff_t PremiumShopPurchase_HydraCheck = 0x20d37d4;
@@ -253,4 +254,15 @@ namespace mk11::off {
     constexpr ptrdiff_t GenericCommand_SetCommandFlags = 0x2491b4c; // GenericCommand::SetCommandFlags(PAD_SCAN_FLAGS, unsigned int, unsigned int, unsigned int, unsigned int)
     constexpr ptrdiff_t FGCharacterObj_RegisterFatalityCommand = 0x243c518; // FGCharacterObj::RegisterFatalityCommand(GenericCommand*, MKS::ScriptObj*, unsigned int, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM, unsigned int (*)(MK11CharacterObj const*, MK11CharacterObj const*))
     constexpr ptrdiff_t GenericCommand_AutoCheckAsFatalityCommand = 0x249269c; // GenericCommand::AutoCheckAsFatalityCommand(float, float, PAD_SCAN_FLAGS, unsigned int)
+    constexpr ptrdiff_t GoingToKrypt_ReconnectCall = 0x5b0e200;
+    constexpr ptrdiff_t PerformErrorHandlingForOnline_ReconnectCall = 0x5b0ab6c;
+    constexpr ptrdiff_t PerformErrorHandlingForOnlineMenu_ReconnectCall = 0x269f2e4;
+    constexpr ptrdiff_t TutorialProgression_ReconnectCall = 0x1e81470;
+    constexpr ptrdiff_t OnlineHydraClient_AddHydraReference = 0x1996ca0; // OnlineHydraClient::AddHydraReference(OnlineHydraBase*)
+    constexpr ptrdiff_t OnlineHydraUserData_OnSignOut = 0x19a8d0c; // OnlineHydraUserData::OnSignOut()
+    constexpr ptrdiff_t OnlineHydraClient_Disconnect = 0x198f7f8; // OnlineHydraClient::Disconnect()
+    constexpr ptrdiff_t OnlineHydraBase_Ctor = 0x1996a88;
+    constexpr ptrdiff_t NRSUser_GetUserData_OnlineHydraUserData = 0x1958f5c;
+    constexpr ptrdiff_t OnlineHydraClient_Ctor = 0x199a398;
+    constexpr ptrdiff_t OnlineHydraClient_ResetStateMachine = 0x19a8bac;
 }
