@@ -306,3 +306,7 @@ TutorialProgression_ReconnectCall = 0x1e81470
 # OnlineHydraBase's constructor registers the object with the user's OnlineHydraClient
 # (OnlineHydraUserData+48), which is null once the platform has signed out (network lost, airplane mode).
 OnlineHydraClient_AddHydraReference = OnlineHydraClient::AddHydraReference(OnlineHydraBase*)
+# OnlineHydraUserData::OnSignOut disconnects the client and then drops it (OnlineHydraUserData+48 = null);
+# OnlineHydraSSC::Clear reads client+80 without a check, so every reply built afterwards crashed.
+OnlineHydraUserData_OnSignOut = OnlineHydraUserData::OnSignOut()
+OnlineHydraClient_Disconnect = OnlineHydraClient::Disconnect()

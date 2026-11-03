@@ -359,6 +359,19 @@ HOOK_DEFINE_TRAMPOLINE(HydraAddReference) {
     }
 };
 
+// OnlineHydraSSC::Clear (every reply's constructor) also reads the client, so the client is kept on sign-out:
+// still disconnected, as on a network with no server. OnSignIn replaces and releases it as before.
+HOOK_DEFINE_REPLACE(HydraSignOut) {
+    static bool Callback(u8* userData) {
+        void* client = *reinterpret_cast<void**>(userData + 48);
+        if (client) {
+            game::Fn<void (*)(void*)>(off::OnlineHydraClient_Disconnect)(client);
+            Log("hydra: signed out, client %p disconnected and kept", client);
+        }
+        return true;
+    }
+};
+
 HOOK_DEFINE_TRAMPOLINE(HydraPost) {
     static game::HydraHandle Callback(const void* userHandle, const game::NRSString* endpoint, const game::OnlineValueHandle* body,
                                       const void* done, bool flag) {
@@ -589,6 +602,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);
     HydraAddReference::InstallAtOffset(off::OnlineHydraClient_AddHydraReference);
+    HydraSignOut::InstallAtOffset(off::OnlineHydraUserData_OnSignOut);
     MoviePlay::InstallAtOffset(off::MoviePlayer_Movie_Play);
     StoryReward::InstallAtOffset(off::MK11HydraSSCInterface_RewardStorySequence);
     StoryCatchUp::InstallAtOffset(off::StoryInfo_UpdateServerProgressionData);
