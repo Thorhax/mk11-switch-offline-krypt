@@ -289,7 +289,8 @@ Item notes:
   fighter (round winner = `FGGameInfo::GetRoundWinner` TEAM_INFO, victim = its `GetActiveOpponentInfo(0)`); her script registers
   `KRONIKA_FATALITY_A`. `IsBrutalityAllowed` allows Cyrax and Sektor as attacker on a regular victim (uppercut Brutality).
 - Special moves: Kronika's specials are registered with the same placeholder motions (6, 0, 10, pad 0x20) as everyone's
-  universal ones and her script tests no special inputs (only strings, rolls, jumps): they are AI boss moves. `movescan.cpp`
+  universal ones and her script tests no special inputs, yet the user performed all eight in play (2026-11-03): the
+  move list now uses the user's names and inputs; Teleport (Down, Back + Y) is unconfirmed. `movescan.cpp`
   logs special move and fatality registrations with verbose_log=1.
 - Variation cards: `LoadoutSelectStart` gets `CharacterLoadoutKey`s (+0x20 character key, name `CYR`/`SEK`/`KRO`); regular
   fighters' cards get `#Transient.TextureCompressedImage_N.jpg`, the extra fighters' an empty name, and answering the card's
