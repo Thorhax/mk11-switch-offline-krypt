@@ -359,6 +359,18 @@ Item notes:
   The calls in `GoingToKrypt`, `MKS_MainMenu::PerformErrorHandlingForOnline` (script hash 0xbe1fe7af, FNV-1 of the
   name), `PerformErrorHandlingForOnlineMenu` and `MK11TutorialMode::UpdateServerProgressionData` return true.
   Tested 2026-11-03 in airplane mode: Krypt in/out, Klassic Towers, Story chapter select, Kustomize, no system box.
+- The same reconnect is inlined on the Kombat Kard (main+0x20cb400 `blr x8`, nopped in daily.cpp) and before the
+  Store opens (`StoreOpen_ReconnectCall`, nopped in shop.cpp).
+- Hydra client: `OnlineHydraUserData::OnSignIn` makes the `OnlineHydraClient` (+48) only when the NX64 user has a
+  network account token (+168/+176), so in airplane mode there is none. `OnlineHydraBase`'s constructor
+  (`AddHydraReference`) and `OnlineHydraSSC::Clear` (client+80) use it unchecked: every completed reply the module
+  builds (store purchase, rewards) crashed. The `OnlineHydraBase` constructor hook makes the client as OnSignIn does
+  (0x2b8 bytes, one reference, `Reset`) without `Connect`; `OnSignOut` keeps the client (disconnected) instead of
+  dropping it; `AddHydraReference` skips a null client. Tested 2026-11-03 undocked in airplane mode by the user:
+  two store purchases, Kombat Kard, a fight, a Krypt chest.
+- Docked on LAN, airplane mode does not always cut the network (the client may still exist); test undocked.
+- Towers of Time "first time playing?" is `MKS_MainMenu::ConditionallyDisplayTutorialPopup` (one-time, until
+  `SetHasEnteredSinglePlayer` is saved).
 
 ## Kombat Kard and Daily Challenges (daily.cpp)
 - ZL opens `PlayerProfileModalDriver::RunInputLoop`, which loads the Nintendo network service account data
