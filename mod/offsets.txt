@@ -189,6 +189,7 @@ FGOnlineInventoryBatch_AddCurrencyRequest = FGOnlineInventoryBatch::AddCurrencyR
 SpendableItemManager_GetItemDefinitionBySlug = SpendableItemManager::GetItemDefinitionBySlug(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&)
 # MKS_MainMenu::MainMenu_KombatFeedModalLoop: tbz after ForceAttemptToReconnect (-> branch to the open path)
 StoreOpen_ReconnectCheck = 0x5b0b7d8
+StoreOpen_ReconnectCall = 0x5b0b7d4
 # KombatFeedModalDriver::CheckPremiumShopState: bl FGOnlineCheck::CheckRestrictions
 PremiumShop_CheckRestrictionsCall = 0x20d4874
 # KombatFeedModalDriver::TryToPurchasePremiumShopSelection: cbz after MKOnline_HasEthernetLink / IsConnectedToHydra
@@ -302,3 +303,6 @@ GoingToKrypt_ReconnectCall = 0x5b0e200
 PerformErrorHandlingForOnline_ReconnectCall = 0x5b0ab6c
 PerformErrorHandlingForOnlineMenu_ReconnectCall = 0x269f2e4
 TutorialProgression_ReconnectCall = 0x1e81470
+# OnlineHydraBase's constructor registers the object with the user's OnlineHydraClient
+# (OnlineHydraUserData+48), which is null once the platform has signed out (network lost, airplane mode).
+OnlineHydraClient_AddHydraReference = OnlineHydraClient::AddHydraReference(OnlineHydraBase*)

@@ -274,5 +274,11 @@ namespace mk11::daily {
         code = reinterpret_cast<const u32*>(exl::util::modules::GetTargetStart() + KombatKardConnected);
         if (*code == 0x2a0003f6) exl::patch::CodePatcher(KombatKardConnected).Write<u32>(0x52800036);  // mov w22, #1
         else Log("daily: unexpected code at the Kombat Kard connection check, left alone");
+        // Its reconnect attempt (an inlined ForceAttemptToReconnect, result unused) shows the system "turn off
+        // airplane mode" box in airplane mode: skipped.
+        constexpr ptrdiff_t KombatKardReconnect = 0x20cb400;  // blr x8 (online platform vtable +144)
+        code = reinterpret_cast<const u32*>(exl::util::modules::GetTargetStart() + KombatKardReconnect);
+        if (*code == 0xd63f0100) exl::patch::CodePatcher(KombatKardReconnect).Write<u32>(0xd503201f);  // nop
+        else Log("daily: unexpected code at the Kombat Kard reconnect, left alone");
     }
 }

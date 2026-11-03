@@ -402,7 +402,11 @@ HOOK_DEFINE_TRAMPOLINE(StoreMenu) {
         if (!s_Decided) {
             s_Decided = true;
             bool enabled = config::OfflineStore();
-            if (enabled) exl::patch::CodePatcher(off::StoreOpen_ReconnectCheck).Write<u32>(0x14000047);  // b +0x11c (open)
+            if (enabled) {
+                // The reconnect attempt itself shows the system "turn off airplane mode" box: skipped too.
+                exl::patch::CodePatcher(off::StoreOpen_ReconnectCall).Write<u32>(0xd503201f);    // nop
+                exl::patch::CodePatcher(off::StoreOpen_ReconnectCheck).Write<u32>(0x14000047);  // b +0x11c (open)
+            }
             Log("shop: offline store %s", enabled ? "enabled (offline_store=1)" : "disabled (offline_store=0)");
         }
         Orig(vm);

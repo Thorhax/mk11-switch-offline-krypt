@@ -345,6 +345,20 @@ HOOK_DEFINE_TRAMPOLINE(InventoryPost) {
     }
 };
 
+// The completed replies built here (hydra::CompletedReply) construct an OnlineHydraSSC, whose base constructor
+// registers it with the user's OnlineHydraClient without checking for one. In airplane mode the platform signs
+// out after a failed network check and the client is gone, so a purchase or a fight reward crashed there.
+// The destructor already allows a missing client, and these replies are never sent: no client, no registration.
+HOOK_DEFINE_TRAMPOLINE(HydraAddReference) {
+    static void Callback(void* client, void* object) {
+        if (!client) {
+            LogVerbose("hydra: no client (signed out), reply %p not registered", object);
+            return;
+        }
+        Orig(client, object);
+    }
+};
+
 HOOK_DEFINE_TRAMPOLINE(HydraPost) {
     static game::HydraHandle Callback(const void* userHandle, const game::NRSString* endpoint, const game::OnlineValueHandle* body,
                                       const void* done, bool flag) {
@@ -574,6 +588,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     daily::Install();
     InventoryPost::InstallAtOffset(off::FGOnlineInventoryBatch_Post);
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);
+    HydraAddReference::InstallAtOffset(off::OnlineHydraClient_AddHydraReference);
     MoviePlay::InstallAtOffset(off::MoviePlayer_Movie_Play);
     StoryReward::InstallAtOffset(off::MK11HydraSSCInterface_RewardStorySequence);
     StoryCatchUp::InstallAtOffset(off::StoryInfo_UpdateServerProgressionData);
