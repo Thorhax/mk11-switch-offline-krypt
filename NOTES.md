@@ -352,6 +352,14 @@ Item notes:
 - Subtitles: the game draws prerendered subtitles by movie name (`mk_execute_prerendered_subtitles`); there are
   none for CYR_Ending, so the video carries its own.
 
+## Airplane mode (main.cpp)
+- Before the Krypt, Story, Klassic Towers, Kustomize (GoToGearcreen) and the tutorial the game calls
+  `ForceAttemptToReconnect()`; in airplane mode it fails (nifm `HandleNetworkRequestErrorResult` shows the system
+  "turn off airplane mode" box from `NX64Networking::CheckNetworkAvailableThread`) and the Krypt refuses entry.
+  The calls in `GoingToKrypt`, `MKS_MainMenu::PerformErrorHandlingForOnline` (script hash 0xbe1fe7af, FNV-1 of the
+  name), `PerformErrorHandlingForOnlineMenu` and `MK11TutorialMode::UpdateServerProgressionData` return true.
+  Tested 2026-11-03 in airplane mode: Krypt in/out, Klassic Towers, Story chapter select, Kustomize, no system box.
+
 ## Kombat Kard and Daily Challenges (daily.cpp)
 - ZL opens `PlayerProfileModalDriver::RunInputLoop`, which loads the Nintendo network service account data
   (`OnlineNX64UserData::LoadNSAData`, fails offline: "You must be connected...") and then waits on "Connecting to
