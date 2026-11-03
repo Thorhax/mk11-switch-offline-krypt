@@ -310,3 +310,9 @@ OnlineHydraClient_AddHydraReference = OnlineHydraClient::AddHydraReference(Onlin
 # OnlineHydraSSC::Clear reads client+80 without a check, so every reply built afterwards crashed.
 OnlineHydraUserData_OnSignOut = OnlineHydraUserData::OnSignOut()
 OnlineHydraClient_Disconnect = OnlineHydraClient::Disconnect()
+# In airplane mode OnlineHydraUserData::OnSignIn never makes a client (no account token at NX64NRSUser+168/+176),
+# so the client is created the way OnSignIn does it, minus Connect, before an OnlineHydraBase is built.
+OnlineHydraBase_Ctor = 0x1996a88
+NRSUser_GetUserData_OnlineHydraUserData = 0x1958f5c
+OnlineHydraClient_Ctor = 0x199a398
+OnlineHydraClient_ResetStateMachine = 0x19a8bac

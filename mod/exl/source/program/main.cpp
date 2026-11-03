@@ -372,6 +372,28 @@ HOOK_DEFINE_REPLACE(HydraSignOut) {
     }
 };
 
+// Without an account token (airplane mode) OnSignIn makes no client at all, and OnlineHydraSSC::Clear crashed on
+// the first reply. Made here like OnSignIn (0x2b8 bytes, one reference, state machine reset) but never connected.
+HOOK_DEFINE_TRAMPOLINE(HydraBaseCtor) {
+    static void Callback(void* object, const u8* userHandle, const void* name) {
+        if (void* user = *reinterpret_cast<void* const*>(userHandle + 8)) {
+            u8* userData = game::Fn<u8* (*)(void*)>(off::NRSUser_GetUserData_OnlineHydraUserData)(user);
+            void** slot = userData ? reinterpret_cast<void**>(userData + 48) : nullptr;
+            if (slot && !*slot) {
+                u8* client = game::Fn<u8* (*)(int, int)>(off::IsolatedLongTermAllocator_Malloc)(0x2b8, 8);
+                if (client) {
+                    game::Fn<void (*)(void*, const void*)>(off::OnlineHydraClient_Ctor)(client, userData + 0x18);
+                    __atomic_add_fetch(reinterpret_cast<s32*>(client + 0x40), 1, __ATOMIC_SEQ_CST);
+                    *slot = client;
+                    game::Fn<void (*)(void*)>(off::OnlineHydraClient_ResetStateMachine)(client);
+                    Log("hydra: no client (no network account), offline client %p made", client);
+                }
+            }
+        }
+        Orig(object, userHandle, name);
+    }
+};
+
 HOOK_DEFINE_TRAMPOLINE(HydraPost) {
     static game::HydraHandle Callback(const void* userHandle, const game::NRSString* endpoint, const game::OnlineValueHandle* body,
                                       const void* done, bool flag) {
@@ -603,6 +625,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     HydraPost::InstallAtOffset(off::OnlineHydraSSC_Post);
     HydraAddReference::InstallAtOffset(off::OnlineHydraClient_AddHydraReference);
     HydraSignOut::InstallAtOffset(off::OnlineHydraUserData_OnSignOut);
+    HydraBaseCtor::InstallAtOffset(off::OnlineHydraBase_Ctor);
     MoviePlay::InstallAtOffset(off::MoviePlayer_Movie_Play);
     StoryReward::InstallAtOffset(off::MK11HydraSSCInterface_RewardStorySequence);
     StoryCatchUp::InstallAtOffset(off::StoryInfo_UpdateServerProgressionData);
