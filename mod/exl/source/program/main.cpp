@@ -542,6 +542,11 @@ extern "C" void exl_main(void* x0, void* x1) {
     exl::hook::Initialize();
     crash::Install();
 
+    // Reconnect attempts before offline modes: false in airplane mode (system "turn off airplane mode" box, and
+    // the Krypt refuses entry). Return true as on a network with no server.
+    for (ptrdiff_t call : { off::GoingToKrypt_ReconnectCall, off::PerformErrorHandlingForOnline_ReconnectCall,
+                            off::PerformErrorHandlingForOnlineMenu_ReconnectCall, off::TutorialProgression_ReconnectCall })
+        exl::patch::CodePatcher(call).Write<u32>(0x52800020);                                  // mov w0, #1
     // GoingToKrypt: IsRestrictedFromEnteringOnlineFeature (needs an online-capable account) -> not restricted.
     exl::patch::CodePatcher(off::GoingToKrypt_IsRestrictedCall).Write<u32>(0x52800000);        // mov w0, #0
     // GoingToKrypt: "signed in to a Nintendo Account" check -> true.

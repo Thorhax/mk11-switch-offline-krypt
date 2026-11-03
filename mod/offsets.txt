@@ -293,3 +293,12 @@ GenericCommand_AutoCheckAsGroundSpecialCommand = GenericCommand::AutoCheckAsGrou
 GenericCommand_SetCommandFlags = GenericCommand::SetCommandFlags(PAD_SCAN_FLAGS, unsigned int, unsigned int, unsigned int, unsigned int)
 FGCharacterObj_RegisterFatalityCommand = FGCharacterObj::RegisterFatalityCommand(GenericCommand*, MKS::ScriptObj*, unsigned int, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM, unsigned int (*)(MK11CharacterObj const*, MK11CharacterObj const*))
 GenericCommand_AutoCheckAsFatalityCommand = GenericCommand::AutoCheckAsFatalityCommand(float, float, PAD_SCAN_FLAGS, unsigned int)
+# ForceAttemptToReconnect calls in offline modes (false in airplane mode: nifm's "turn off airplane mode" applet,
+# and the Krypt refuses entry). On a LAN with no server it returns true; these calls are made to return true.
+# GoingToKrypt line 2950; PerformErrorHandlingForOnline (script: StorySubmenu, StartStoryHUBDriver,
+# GoingToKlassicPortals, GoToGearcreen); PerformErrorHandlingForOnlineMenu (UIStoryMenuPassthroughDriver);
+# MK11TutorialMode::UpdateServerProgressionData.
+GoingToKrypt_ReconnectCall = 0x5b0e200
+PerformErrorHandlingForOnline_ReconnectCall = 0x5b0ab6c
+PerformErrorHandlingForOnlineMenu_ReconnectCall = 0x269f2e4
+TutorialProgression_ReconnectCall = 0x1e81470
