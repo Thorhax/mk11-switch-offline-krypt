@@ -316,3 +316,10 @@ OnlineHydraBase_Ctor = 0x1996a88
 NRSUser_GetUserData_OnlineHydraUserData = 0x1958f5c
 OnlineHydraClient_Ctor = 0x199a398
 OnlineHydraClient_ResetStateMachine = 0x19a8bac
+# MKS_FightEngine::pGenericVictoryCinema without a cinema: bl BlendToStanceCharacter(winner, 0, 5, 5).
+GenericVictoryCinema_BlendToStanceCall = 0x490421c
+BlendToStanceCharacter = BlendToStanceCharacter(FGCharacterObj*, float, float, float)
+# Its last step, after x1 = script, w2 = FNV-1("SleepForever"): mov w3, wzr; then CallScriptFunction (victory.cpp).
+GenericVictoryCinema_SleepArgs = 0x4904278
+GameplaySkeletalObj_GetActivePlayerDataScript = GameplaySkeletalObj::GetActivePlayerDataScript()
+MKS_ScriptObj_GetFunctionIndex = MKS::ScriptObj::GetFunctionIndex(unsigned int, bool) const

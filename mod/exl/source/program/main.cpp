@@ -16,6 +16,7 @@
 #include "autoplay.hpp"
 #include "movelist.hpp"
 #include "movescan.hpp"
+#include "victory.hpp"
 #include "selectart.hpp"
 #include "endings.hpp"
 #include "daily.hpp"
@@ -618,6 +619,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     autoplay::Install();
     movelist::Install();
     movescan::Install();
+    victory::Install();
     selectart::Install();
     endings::Install();
     daily::Install();

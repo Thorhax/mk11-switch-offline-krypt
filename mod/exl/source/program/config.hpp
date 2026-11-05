@@ -23,6 +23,9 @@ namespace mk11::config {
     bool FreeCurrency();
     // Spending never lowers crafting materials, Kollector relics, keys or Konsumables (free_items=1).
     bool FreeItems();
+    // Cyrax and Sektor end a won match with their raised-fist win pose (their BrutalityVictory) instead of
+    // standing still (on unless victory_pose=0).
+    bool VictoryPose();
     // Routine log lines (LogVerbose) are written only with verbose_log=1.
     bool VerboseLog();
 }

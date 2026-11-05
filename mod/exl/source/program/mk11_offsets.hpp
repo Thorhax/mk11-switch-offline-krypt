@@ -265,4 +265,9 @@ namespace mk11::off {
     constexpr ptrdiff_t NRSUser_GetUserData_OnlineHydraUserData = 0x1958f5c;
     constexpr ptrdiff_t OnlineHydraClient_Ctor = 0x199a398;
     constexpr ptrdiff_t OnlineHydraClient_ResetStateMachine = 0x19a8bac;
+    constexpr ptrdiff_t GenericVictoryCinema_BlendToStanceCall = 0x490421c;
+    constexpr ptrdiff_t BlendToStanceCharacter = 0x2450ca4; // BlendToStanceCharacter(FGCharacterObj*, float, float, float)
+    constexpr ptrdiff_t GenericVictoryCinema_SleepArgs = 0x4904278;
+    constexpr ptrdiff_t GameplaySkeletalObj_GetActivePlayerDataScript = 0x24d53ec; // GameplaySkeletalObj::GetActivePlayerDataScript()
+    constexpr ptrdiff_t MKS_ScriptObj_GetFunctionIndex = 0x17abf6c; // MKS::ScriptObj::GetFunctionIndex(unsigned int, bool) const
 }

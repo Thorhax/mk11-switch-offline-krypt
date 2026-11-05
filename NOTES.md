@@ -288,6 +288,20 @@ Item notes:
 - Finishers since 2026-11-02: `IsFatalityAvailable` also allows Kronika's Fatality when she won the round against a regular
   fighter (round winner = `FGGameInfo::GetRoundWinner` TEAM_INFO, victim = its `GetActiveOpponentInfo(0)`); her script registers
   `KRONIKA_FATALITY_A`. `IsBrutalityAllowed` allows Cyrax and Sektor as attacker on a regular victim (uppercut Brutality).
+- Win pose (victory.cpp, 2026-11-05, tested Cyrax and Sektor mirror matches, and by the user in towers): Cyrax and
+  Sektor have no victory cinema (`CharacterDefinition::GetCharacterCinema` type 1 is empty; rom:/NX64TOC.txt has no
+  Cyrax/Sektor Victory packages). Match end: `MKS_FightEngine::WinnerWinpose` -> `pGenericVictoryCinema` (glue, since
+  their scripts lack `pVictoryCinema`), which without a cinema does `BlendToStanceCharacter(winner, 0, 5, 5)`,
+  `RequestVictoryEnd`, `SleepForever` (they just stood). After a Brutality the game runs the winner's
+  `BrutalityVictory` (`PLAYER_INFO::GetCharacterBrutalityVictory`, `_JumpScript`): the raised fist. The module skips
+  the blend for them (bl at 0x490421c -> nop + inline hook that makes the call for everyone else) and turns the final
+  `CallScriptFunction(vm, script, SleepForever)` (inline at 0x4904278) into the winner's `BrutalityVictory`, which
+  ends in SleepForever too. `victory_pose=0` turns it off. Script function hashes are FNV-1 of the name
+  (pVictoryCinema 0x1ee20906, pGenericVictoryCinema 0x5e8f633d, BrutalityVictory 0x28b4bc37, SleepForever 0x3fc4e673,
+  RequestVictoryEnd 0x8c2d20d1). WinnerWinpose's own final jump is never reached after the generic glue call.
+  Dead ends: borrowing another fighter's victory package (GetCharacterCinema returning e.g. SubZero_C_Victory) plays,
+  but its imports load only when that fighter is in the match (Terminator_C_Victory: "failed to find import:
+  Disk.Cinematics.Global", game closed); RoundOverWinnerWalkaway -> RoundOverWinnerTaunt is not the fist.
 - Special moves: Kronika's specials are registered with the same placeholder motions (6, 0, 10, pad 0x20) as everyone's
   universal ones and her script tests no special inputs, yet the user performed all eight in play (2026-11-03): the
   move list now uses the user's names and inputs; Teleport (Down, Back + Y) also works. `movescan.cpp`
@@ -351,6 +365,14 @@ Item notes:
   listed (after Cetrion, Kotal Kahn, Scorpion) and play from the list. The preview images are the neighbour's.
 - Subtitles: the game draws prerendered subtitles by movie name (`mk_execute_prerendered_subtitles`); there are
   none for CYR_Ending, so the video carries its own.
+
+## Hook pool (setting.hpp)
+- exlaunch's trampolines take 200 bytes each from `JitSize`. 0x4000 held 81 and v0.15 installed 76; one too many
+  crashes at boot (data abort in module init, then the crash handler's SD mount fails). Now 0x8000 (163).
+- Never read config.ini (or touch nn::fs) from an Install(): the SD card is not mounted yet and the game hangs on
+  the boot logo. Read it in the hook.
+- Don't hook functions shorter than 0x14 bytes (e.g. `CharacterLoadout::GetRandomVictoryCinemaName`, 12 bytes): the
+  trampoline overwrites the next function.
 
 ## Airplane mode (main.cpp)
 - Before the Krypt, Story, Klassic Towers, Kustomize (GoToGearcreen) and the tutorial the game calls
