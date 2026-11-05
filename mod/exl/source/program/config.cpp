@@ -24,6 +24,7 @@ namespace mk11::config {
         bool s_FreeItems = false;
         bool s_VerboseLog = false;
         bool s_VictoryPose = true;
+        bool s_FatalBlows = true;
 
         void Apply(const char* key, const char* value) {
             if (strcmp(key, "krypt_currency_topup") == 0) s_TopUp = atoi(value);
@@ -37,6 +38,7 @@ namespace mk11::config {
             else if (strcmp(key, "free_items") == 0) s_FreeItems = atoi(value) != 0;
             else if (strcmp(key, "verbose_log") == 0) s_VerboseLog = atoi(value) != 0;
             else if (strcmp(key, "victory_pose") == 0) s_VictoryPose = atoi(value) != 0;
+            else if (strcmp(key, "fatal_blows") == 0) s_FatalBlows = atoi(value) != 0;
         }
 
         void Load() {
@@ -68,8 +70,8 @@ namespace mk11::config {
                 }
                 line = next;
             }
-            Log("config: krypt_currency_topup=%d apply_gear_rewards=%d skip_tower_credits=%d offline_store=%d krypt_chest_krystals=%d p1_cpu=%d free_currency=%d free_items=%d verbose_log=%d victory_pose=%d", s_TopUp,
-                s_ApplyGear, s_SkipTowerCredits, s_OfflineStore, s_ChestKrystals, s_P1Cpu, s_FreeCurrency, s_FreeItems, s_VerboseLog, s_VictoryPose);
+            Log("config: krypt_currency_topup=%d apply_gear_rewards=%d skip_tower_credits=%d offline_store=%d krypt_chest_krystals=%d p1_cpu=%d free_currency=%d free_items=%d verbose_log=%d victory_pose=%d fatal_blows=%d", s_TopUp,
+                s_ApplyGear, s_SkipTowerCredits, s_OfflineStore, s_ChestKrystals, s_P1Cpu, s_FreeCurrency, s_FreeItems, s_VerboseLog, s_VictoryPose, s_FatalBlows);
         }
     }
 
@@ -126,5 +128,10 @@ namespace mk11::config {
     bool VictoryPose() {
         if (!s_Loaded) Load();
         return s_VictoryPose;
+    }
+
+    bool FatalBlows() {
+        if (!s_Loaded) Load();
+        return s_FatalBlows;
     }
 }

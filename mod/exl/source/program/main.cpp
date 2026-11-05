@@ -17,6 +17,7 @@
 #include "movelist.hpp"
 #include "movescan.hpp"
 #include "victory.hpp"
+#include "fatalblow.hpp"
 #include "selectart.hpp"
 #include "endings.hpp"
 #include "daily.hpp"
@@ -620,6 +621,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     movelist::Install();
     movescan::Install();
     victory::Install();
+    fatalblow::Install();
     selectart::Install();
     endings::Install();
     daily::Install();

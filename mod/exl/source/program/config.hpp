@@ -26,6 +26,8 @@ namespace mk11::config {
     // Cyrax and Sektor end a won match with their raised-fist win pose (their BrutalityVictory) instead of
     // standing still (on unless victory_pose=0).
     bool VictoryPose();
+    // Cyrax and Sektor get a Fatal Blow made from one of their own attacks (on unless fatal_blows=0).
+    bool FatalBlows();
     // Routine log lines (LogVerbose) are written only with verbose_log=1.
     bool VerboseLog();
 }

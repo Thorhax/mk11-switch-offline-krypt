@@ -270,4 +270,15 @@ namespace mk11::off {
     constexpr ptrdiff_t GenericVictoryCinema_SleepArgs = 0x4904278;
     constexpr ptrdiff_t GameplaySkeletalObj_GetActivePlayerDataScript = 0x24d53ec; // GameplaySkeletalObj::GetActivePlayerDataScript()
     constexpr ptrdiff_t MKS_ScriptObj_GetFunctionIndex = 0x17abf6c; // MKS::ScriptObj::GetFunctionIndex(unsigned int, bool) const
+    constexpr ptrdiff_t MKS_CHAR_Cyrax_RegisterUniversalSpecialMoveCombos = 0x4af3ae0; // MKS_CHAR_Cyrax::RegisterUniversalSpecialMoveCombos(MKS::VM*)
+    constexpr ptrdiff_t MKS_CHAR_Sektor_RegisterUniversalSpecialMoveCombos = 0x520c684; // MKS_CHAR_Sektor::RegisterUniversalSpecialMoveCombos(MKS::VM*)
+    constexpr ptrdiff_t FGCharacterObj_RegisterAttackCommand = 0x243bfe8; // FGCharacterObj::RegisterAttackCommand(GenericCommand*, MKS::ScriptObj*, unsigned int, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM, unsigned int (*)(MK11CharacterObj const*, MK11CharacterObj const*))
+    constexpr ptrdiff_t GenericCommand_AutoCheckAsSuperMoveCommand = 0x2492240; // GenericCommand::AutoCheckAsSuperMoveCommand(float, unsigned int)
+    constexpr ptrdiff_t GenericCommand_SetSpecialMoveComboSettings = 0x24922c0; // GenericCommand::SetSpecialMoveComboSettings(PAD_SCAN_FLAGS, unsigned int, unsigned int, unsigned int, unsigned int, float, unsigned int)
+    constexpr ptrdiff_t PLAYER_INFO_CheckSuperMoveCommandInternal = 0x24a4e6c; // PLAYER_INFO::CheckSuperMoveCommandInternal(GenericCommand&, FGCharacterObj&, FGCharacterObj const&)
+    constexpr ptrdiff_t ReactionInfo_CalculateDamage = 0x2406f8c; // ReactionInfo::CalculateDamage()
+    constexpr ptrdiff_t GenericCommand_SetForceDisabled = 0x2492bb0; // GenericCommand::SetForceDisabled(bool)
+    constexpr ptrdiff_t FGCharacterObj_DamageCharacter = 0x244578c; // FGCharacterObj::DamageCharacter(float, unsigned int, unsigned int, DAMAGE_TYPE, unsigned int, ElementalDamageType, FGCharacterObj*, MoveID, unsigned int)
+    constexpr ptrdiff_t MoveID_Ctor = 0x2496b98; // MoveID::MoveID()
+    constexpr ptrdiff_t ReactionInfo_IsHitBlocked = 0x24090ac; // ReactionInfo::IsHitBlocked()
 }

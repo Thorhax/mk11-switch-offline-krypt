@@ -302,6 +302,23 @@ Item notes:
   Dead ends: borrowing another fighter's victory package (GetCharacterCinema returning e.g. SubZero_C_Victory) plays,
   but its imports load only when that fighter is in the match (Terminator_C_Victory: "failed to find import:
   Disk.Cinematics.Global", game closed); RoundOverWinnerWalkaway -> RoundOverWinnerTaunt is not the fist.
+- Fatal Blows (fatalblow.cpp, 2026-11-05, tested Cyrax and Sektor vs CPU Sub-Zero): regular fighters' scripts call
+  `SetupSupermoveAttack(fighter, script, pFuncSupermove, 992608951)`: `FGCharacterObj::RegisterAttackCommand(fighter,
+  gComSupermove, script, FNV-1 of the attack, conditions, conditions, 0x8000003b, null)`,
+  `GenericCommand::AutoCheckAsSuperMoveCommand(cmd, 1.0, 992608951)`, `SetSpecialMoveComboSettings(cmd, 0x20, 18, 15,
+  12, 0, 1.0, 992608951)`; gComSupermove and the conditions are script globals (Cyrax 0x28100000000078e8 /
+  0x24100000000063b8, Sektor 0x2810000000007288 / 0x2410000000005d58, from their unused SetupSupermoveAttack).
+  Cyrax and Sektor never call it and have no pFuncSupermove. The module does it after their
+  RegisterUniversalSpecialMoveCombos (arg 0 the fighter; arg 1 is a number, the script is taken from their own
+  RegisterAttackCommand calls in it) with pFuncBombSmashMB / pFuncTeleportAttack. The HUD then shows FATAL BLOW and
+  ZL+ZR. The registration carries no life rule (it fired at 66 %), so `PLAYER_INFO::CheckSuperMoveCommandInternal`
+  is refused above 30 % life (+3104 / +3108). Damage: Cyrax's bombs hit as their own objects, so the first
+  `ReactionInfo::CalculateDamage` (attacker +0, victim +16, damage +1512) on the opponent within 4 s, unless
+  `IsHitBlocked`, calls `GenericCommand::SetForceDisabled(cmd, true)` (as their ForceDisableSupermove; once a match)
+  and `DamageCharacter(victim, 0.28 * max life, 0, 0, 3, 0, 0, null, MoveID, 1)` like `SupermoveDamageAtFrameData`
+  (life is a fraction, max 1.0; the bonus leaves 1 %). Measured: about 35 % with the bombs' own damage. A real
+  Fatal Blow's cinema (`SuperMoveIntoBegin`: events 185/186 and state 0x5207; `SupermoveFailed`: event 187) is not
+  used. `fatal_blows=0` turns it off. Stage interactions (ZL/ZR alone) also explode; don't mistake them for it.
 - Special moves: Kronika's specials are registered with the same placeholder motions (6, 0, 10, pad 0x20) as everyone's
   universal ones and her script tests no special inputs, yet the user performed all eight in play (2026-11-03): the
   move list now uses the user's names and inputs; Teleport (Down, Back + Y) also works. `movescan.cpp`

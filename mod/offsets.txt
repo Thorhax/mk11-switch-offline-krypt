@@ -323,3 +323,15 @@ BlendToStanceCharacter = BlendToStanceCharacter(FGCharacterObj*, float, float, f
 GenericVictoryCinema_SleepArgs = 0x4904278
 GameplaySkeletalObj_GetActivePlayerDataScript = GameplaySkeletalObj::GetActivePlayerDataScript()
 MKS_ScriptObj_GetFunctionIndex = MKS::ScriptObj::GetFunctionIndex(unsigned int, bool) const
+# Fatal Blows for Cyrax and Sektor (fatalblow.cpp): what SetupSupermoveAttack does, after their move setup.
+MKS_CHAR_Cyrax_RegisterUniversalSpecialMoveCombos = MKS_CHAR_Cyrax::RegisterUniversalSpecialMoveCombos(MKS::VM*)
+MKS_CHAR_Sektor_RegisterUniversalSpecialMoveCombos = MKS_CHAR_Sektor::RegisterUniversalSpecialMoveCombos(MKS::VM*)
+FGCharacterObj_RegisterAttackCommand = FGCharacterObj::RegisterAttackCommand(GenericCommand*, MKS::ScriptObj*, unsigned int, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM const*, SWITCH_BITS_INDEX_FORM, unsigned int (*)(MK11CharacterObj const*, MK11CharacterObj const*))
+GenericCommand_AutoCheckAsSuperMoveCommand = GenericCommand::AutoCheckAsSuperMoveCommand(float, unsigned int)
+GenericCommand_SetSpecialMoveComboSettings = GenericCommand::SetSpecialMoveComboSettings(PAD_SCAN_FLAGS, unsigned int, unsigned int, unsigned int, unsigned int, float, unsigned int)
+PLAYER_INFO_CheckSuperMoveCommandInternal = PLAYER_INFO::CheckSuperMoveCommandInternal(GenericCommand&, FGCharacterObj&, FGCharacterObj const&)
+ReactionInfo_CalculateDamage = ReactionInfo::CalculateDamage()
+GenericCommand_SetForceDisabled = GenericCommand::SetForceDisabled(bool)
+FGCharacterObj_DamageCharacter = FGCharacterObj::DamageCharacter(float, unsigned int, unsigned int, DAMAGE_TYPE, unsigned int, ElementalDamageType, FGCharacterObj*, MoveID, unsigned int)
+MoveID_Ctor = MoveID::MoveID()
+ReactionInfo_IsHitBlocked = ReactionInfo::IsHitBlocked()
