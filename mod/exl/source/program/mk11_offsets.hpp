@@ -281,4 +281,8 @@ namespace mk11::off {
     constexpr ptrdiff_t FGCharacterObj_DamageCharacter = 0x244578c; // FGCharacterObj::DamageCharacter(float, unsigned int, unsigned int, DAMAGE_TYPE, unsigned int, ElementalDamageType, FGCharacterObj*, MoveID, unsigned int)
     constexpr ptrdiff_t MoveID_Ctor = 0x2496b98; // MoveID::MoveID()
     constexpr ptrdiff_t ReactionInfo_IsHitBlocked = 0x24090ac; // ReactionInfo::IsHitBlocked()
+    constexpr ptrdiff_t Tweakvars_GetLatestFromServer_WaitCall = 0x1913d38;
+    constexpr ptrdiff_t Tweakvars_GetJob = 0x1913b3c; // Tweakvars::GetJob(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&) const
+    constexpr ptrdiff_t TweakvarDownloadJob_IsComplete = 0x1913810; // TweakvarDownloadJob::IsComplete() const
+    constexpr ptrdiff_t MKProcSleep = 0x179f058; // MKProcSleep(unsigned int)
 }

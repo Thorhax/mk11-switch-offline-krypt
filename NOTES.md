@@ -3,7 +3,7 @@
 Goal: play the Krypt on the console with no server. MK11 Ultimate 1.0.26, title 0100F2200C984000,
 main build ID 4F7AB1A3EEFC7EB2. Everything below is specific to that build.
 
-## Status (2026-11-02, v0.13)
+## Status (2026-11-11; table last revised for v0.15, later features in their own sections)
 
 | Area | State |
 |---|---|
@@ -43,7 +43,7 @@ atmosphere/contents/0100F2200C984000/exefs/main.npdm  game npdm + svcs 0x40/0x43
 mk11offline/config.ini                                optional settings
 ```
 
-Release copies: `mod/releases/v0.6-xp/` (current), `mod/releases/v0.5-towers-of-time/`, `mod/releases/v0.4-towers/`, `mod/releases/v0.3-materials/`, `mod/releases/v0.2-give-items/`, `mod/releases/v0.1-offline-krypt/`. To uninstall, delete the `exefs` folder.
+Release copies: `mod/releases/<version>/` (current: `v0.18-startup`). To uninstall, delete the `exefs` folder.
 
 ## Files the module writes on the SD card (`sdmc:/mk11offline/`)
 
@@ -410,6 +410,25 @@ Item notes:
 - Docked on LAN, airplane mode does not always cut the network (the client may still exist); test undocked.
 - Towers of Time "first time playing?" is `MKS_MainMenu::ConditionallyDisplayTutorialPopup` (one-time, until
   `SetHasEnteredSinglePlayer` is saved).
+
+## Fresh save start-up (startup.cpp, 2026-11-11)
+- A tester reported having to connect to the internet to get past "Updating Game Data" at launch. Reproduced the
+  first launch with a new console user (no Nintendo Account linked, LAN connected): the system "Please link your
+  Nintendo Account" box (`EnsureNetworkServiceAccountAvailable`, Cancel continues), title, then "Updating Game
+  Data..." (~10 s, `MKS_MainMenu::LegalEULA_Init` waiting for the EULA download with a script time limit; without
+  internet, `IsInternetConnected` false, it skips the download), the EULA ("Failed to download EULA documents",
+  Accept), "Updating Game Data..." again, Audio and Video settings, Link to Mortal Kombat Mobile (Not Now), main
+  menu. All passed on LAN.
+- The second box is `MKS_MainMenu::StartMainMenuFromAttract` (it runs on every Start at the title, any save):
+  `Tweakvars::GetLatest(true)` waits in `Tweakvars::WaitForJobToComplete` (sleep loop, no time limit) for the
+  tweakvar download job started at boot by `MKS_attract::AttractModeLegalScreen`. On LAN it took 5.1 s. The wait
+  now gives up after 15 s; `ApplyLatestData` then applies nothing (as with no job). Not reproduced offline: the
+  user's airplane-mode test (existing save) passed this, so the tester's hang may be elsewhere.
+- `WaitForJobToComplete` (0x1913ff8) can't be hooked: exlaunch's far patch (5 instructions) would cross the page at
+  0x1914000 and the boot aborts (crash in `exl::hook::nx64::Hook`, then the crash handler fails to mount the SD).
+  Its `bl` in `GetLatestFromServer` is a nop with an inline hook instead. Check page crossings when a hooked
+  function is far (> 128 MB) from the module.
+- The extra user shares `sdmc:/mk11offline/` (krypt.dat etc.) with the others; a first launch did not change it.
 
 ## Kombat Kard and Daily Challenges (daily.cpp)
 - ZL opens `PlayerProfileModalDriver::RunInputLoop`, which loads the Nintendo network service account data

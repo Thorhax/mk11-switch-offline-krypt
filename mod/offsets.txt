@@ -335,3 +335,12 @@ GenericCommand_SetForceDisabled = GenericCommand::SetForceDisabled(bool)
 FGCharacterObj_DamageCharacter = FGCharacterObj::DamageCharacter(float, unsigned int, unsigned int, DAMAGE_TYPE, unsigned int, ElementalDamageType, FGCharacterObj*, MoveID, unsigned int)
 MoveID_Ctor = MoveID::MoveID()
 ReactionInfo_IsHitBlocked = ReactionInfo::IsHitBlocked()
+# Start-up waits (startup.cpp). Tweakvars::GetLatest(true) on Start at the title (StartMainMenuFromAttract, under
+# "Updating Game Data...") waits in WaitForJobToComplete, with no time limit, for the tweakvar download job that
+# MKS_attract::AttractModeLegalScreen started at boot; GetJob returns null when there is none.
+# Hooked at its call in GetLatestFromServer (bl, x0 = Tweakvars, x1 = &name): the function itself starts 8 bytes
+# before a page boundary, and exlaunch's 5-instruction far patch across it aborts the boot.
+Tweakvars_GetLatestFromServer_WaitCall = 0x1913d38
+Tweakvars_GetJob = Tweakvars::GetJob(NRS::NRSBasicString<NRS::DefaultContainerAllocator> const&) const
+TweakvarDownloadJob_IsComplete = TweakvarDownloadJob::IsComplete() const
+MKProcSleep = MKProcSleep(unsigned int)
